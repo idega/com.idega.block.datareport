@@ -1,7 +1,12 @@
-#Mon Oct 27 01:32:58 CET 2003
-CommuneReportBusiness.parent2_ssn=
+=\=\=\=\=\=\=
+<<<<<<<=Localizable.strings
+>>>>>>>=1.3
+CommuneReportBusiness.parent2_ssn=Elevlista
+ReportGenerator.click_on_format=Select a link for the desired output format.
 choose_report_name=
 date_format_not_right_sv_SE=
+error_while_parsing_transcription=
 generate_report=
 iw.component.com.idega.block.datareport.presentation.ReportGenerator.name=
 no_query_has_been_chosen_for_this_instance=
+report_name=Generated Report
