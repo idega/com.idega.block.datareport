@@ -45,6 +45,7 @@
     </developer>
   </developers>
   <dependencies>
+      <!-- jasperreports is already included in the dataquery bundle (dependency of this bundle) -->
     <dependency>
       <groupId>jasperreports</groupId>
       <artifactId>jasperreports</artifactId>
