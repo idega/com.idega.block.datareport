@@ -1,3 +1,6 @@
-#Fri Aug 08 07:10:28 GMT 2003
-generate_report=\ Generate 
-iw.component.com.idega.block.datareport.presentation.ReportGenerator.name=ReportGenerator
+generate_report=\u00DAtb\u00FAa sk\u00FDrslu
+iw.component.com.idega.block.datareport.presentation.ReportGenerator.name=Sk\u00FDrslu sko\u00F0ari
+ReportGenerator.click_on_format=Veldu \u00FE\u00E9r sni\u00F0 \u00E1 sk\u00FDrsluna me\u00F0 \u00FEv\u00ED a\u00F0 smella \u00E1 vi\u00F0eigandi hlekk h\u00E9r a\u00F0 ne\u00F0an.
+choose_report_name=Nafn sk\u00FDrslu
+error_while_parsing_transcription=Error occured when trying to read the report generation transcription file
+no_query_has_been_chosen_for_this_instance=Hluturinn er \u00F3stilltur, fari\u00F0 \u00ED properties og stilli\u00F0 hann fyrst.
