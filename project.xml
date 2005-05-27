@@ -5,13 +5,19 @@
   <pomVersion>3</pomVersion>
   <name>idegaWeb Datareport Block</name>
   <artifactId>com.idega.block.datareport</artifactId>
-  <currentVersion>1.0.1</currentVersion>
-  <!--currentVersion>1.1-SNAPSHOT</currentVersion-->
+  <!--currentVersion>1.0.1</currentVersion-->
+  <currentVersion>1.1-SNAPSHOT</currentVersion>
+
   <versions>
     <version>
       <id>1.0</id>
       <name>1.0</name>
       <tag>DATAREPORT_1_0</tag>
+    </version>
+    <version>
+      <id>1.0.1</id>
+      <name>1.0.1</name>
+      <tag>DATAREPORT_1_0_1</tag>
     </version>
   </versions>
   <branches/>
@@ -46,7 +52,8 @@
     </developer>
   </developers>
   <dependencies>
-      <!-- jasperreports is already included in the dataquery bundle (dependency of this bundle) -->
+    <!-- jasperreports is already included in the dataquery bundle (dependency of this bundle) -->
+
     <dependency>
       <groupId>jasperreports</groupId>
       <artifactId>jasperreports</artifactId>
@@ -57,8 +64,8 @@
     <dependency>
       <groupId>bundles</groupId>
       <artifactId>com.idega.core</artifactId>
-      <!--HELPER--><version>3.0.5</version><!--HELPER-->
-      <!--HELPERversion>SNAPSHOT</versionHELPER-->
+      <!--version>3.0.5</version-->
+      <version>SNAPSHOT</version>
 
       <type>jar</type>
       <url>http://www.idega.com/</url>
@@ -69,9 +76,9 @@
     <dependency>
       <groupId>bundles</groupId>
       <artifactId>com.idega.user</artifactId>
-      <!--HELPER--><version>1.1.2</version><!--HELPER-->
-      <!--HELPERversion>SNAPSHOT</versionHELPER-->
-      
+      <!--version>1.1.2</version-->
+      <version>SNAPSHOT</version>
+
       <type>jar</type>
       <url>http://www.idega.com/</url>
       <properties>
@@ -81,8 +88,8 @@
     <dependency>
       <groupId>bundles</groupId>
       <artifactId>com.idega.builder</artifactId>
-      <!--HELPER--><version>1.4.2</version><!--HELPER-->
-      <!--HELPERversion>SNAPSHOT</versionHELPER-->
+      <!--version>1.4.2</version-->
+      <version>SNAPSHOT</version>
 
       <type>jar</type>
       <url>http://www.idega.com/</url>
@@ -93,8 +100,8 @@
     <dependency>
       <groupId>bundles</groupId>
       <artifactId>com.idega.block.media</artifactId>
-      <!--HELPER--><version>1.1.2</version><!--HELPER-->
-      <!--HELPERversion>SNAPSHOT</versionHELPER-->
+      <!--version>1.1.2</version-->
+      <version>SNAPSHOT</version>
 
       <type>jar</type>
       <url>http://www.idega.com/</url>
@@ -105,8 +112,8 @@
     <dependency>
       <groupId>bundles</groupId>
       <artifactId>com.idega.block.entity</artifactId>
-      <!--HELPER--><version>1.1.2</version><!--HELPER-->
-      <!--HELPERversion>SNAPSHOT</versionHELPER-->
+      <!--version>1.1.2</version-->
+      <version>SNAPSHOT</version>
 
       <type>jar</type>
       <url>http://www.idega.com/</url>
@@ -117,8 +124,8 @@
     <dependency>
       <groupId>bundles</groupId>
       <artifactId>com.idega.block.dataquery</artifactId>
-      <!--HELPER--><version>1.0.1</version><!--HELPER-->
-      <!--HELPERversion>SNAPSHOT</versionHELPER-->
+      <!--version>1.0.1</version-->
+      <version>SNAPSHOT</version>
 
       <type>jar</type>
       <url>http://www.idega.com/</url>
@@ -126,12 +133,12 @@
         <eclipse.dependency>true</eclipse.dependency>
       </properties>
     </dependency>
-    		<dependency>
-	      <groupId>poi</groupId>
-	      <artifactId>poi</artifactId>
-	      <version>2.5-final-20040428</version>
-	      <type>jar</type>
-	      <url>http://jakarta.apache.org/poi/</url>
-		</dependency>
+    <dependency>
+      <groupId>poi</groupId>
+      <artifactId>poi</artifactId>
+      <version>2.5-final-20040428</version>
+      <type>jar</type>
+      <url>http://jakarta.apache.org/poi/</url>
+    </dependency>
   </dependencies>
 </project>
