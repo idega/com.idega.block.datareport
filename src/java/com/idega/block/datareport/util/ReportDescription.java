@@ -1,5 +1,5 @@
 /*
- * $Id: ReportDescription.java,v 1.1 2004/10/07 14:56:21 gummi Exp $
+ * $Id: ReportDescription.java,v 1.2 2005/11/29 12:54:07 laddi Exp $
  * Created on 22.9.2004
  *
  * Copyright (C) 2004 Idega Software hf. All Rights Reserved.
@@ -20,10 +20,10 @@ import com.idega.util.datastructures.QueueMap;
 
 /**
  * 
- *  Last modified: $Date: 2004/10/07 14:56:21 $ by $Author: gummi $
+ *  Last modified: $Date: 2005/11/29 12:54:07 $ by $Author: laddi $
  * 
  * @author <a href="mailto:gummi@idega.com">Gudmundur Agust Saemundsson</a>
- * @version $Revision: 1.1 $
+ * @version $Revision: 1.2 $
  */
 public class ReportDescription {
 
@@ -252,21 +252,21 @@ public class ReportDescription {
 		}
 		
 		for (Iterator iter = desc._listOfFields.iterator(); iter.hasNext();) {
-			Object field = (Object) iter.next();
+			Object field = iter.next();
 			if(!_listOfFields.contains(field)){
 				_listOfFields.add(field);
 			}
 		}
 		
 		for (Iterator iter = desc._labelKeys.iterator(); iter.hasNext();) {
-			Object field = (Object) iter.next();
+			Object field = iter.next();
 			if(!_labelKeys.contains(field)){
 				_labelKeys.add(field);
 			}
 		}
 		
 		for (Iterator iter = desc._prmKeys.iterator(); iter.hasNext();) {
-			Object field = (Object) iter.next();
+			Object field = iter.next();
 			if(!_prmKeys.contains(field)){
 				_prmKeys.add(field);
 			}

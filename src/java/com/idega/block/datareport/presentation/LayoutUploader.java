@@ -21,7 +21,6 @@ import com.idega.core.file.data.ICFileHome;
 import com.idega.data.IDOLookup;
 import com.idega.idegaweb.IWResourceBundle;
 import com.idega.io.UploadFile;
-import com.idega.io.serialization.Storable;
 import com.idega.presentation.Block;
 import com.idega.presentation.IWContext;
 import com.idega.presentation.PresentationObject;
@@ -175,7 +174,7 @@ public class LayoutUploader extends Block {
 			ICFileHome fileHome = (ICFileHome)IDOLookup.getHome(ICFile.class);
 			ICFile layout = fileHome.findByPrimaryKey(layoutToBeDownloaded);
 			FileBusiness fileBusiness = (FileBusiness) IBOLookup.getServiceInstance(iwc, FileBusiness.class);
-			downloadUrl = fileBusiness.getURLForOfferingDownload((Storable) layout, iwc);
+			downloadUrl = fileBusiness.getURLForOfferingDownload(layout, iwc);
 		}
 		return null;
 	}
