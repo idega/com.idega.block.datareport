@@ -11,5 +11,6 @@ html=HTML
 iw.component.com.idega.block.datareport.presentation.ReportGenerator.name=
 no_query_has_been_chosen_for_this_instance=
 pdf=PDF
+report_generator.error_generating_report=Error generating report
 report_name=Generated Report
 simple_excel=Excel without template
