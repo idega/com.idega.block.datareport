@@ -30,8 +30,8 @@ import com.idega.util.datastructures.QueueMap;
  */
 public class ReportableCollection extends Vector implements JRDataSource {
 	
-	private IDOReportableEntity _currentJRDataSource = null;
-	private Object _defaultFieldValue = null;
+	IDOReportableEntity _currentJRDataSource = null;
+	Object _defaultFieldValue = null;
 	
 	private QueueMap _extraHeaderParameters = new QueueMap();
 	private ReportDescription _description = null;
@@ -157,10 +157,10 @@ public class ReportableCollection extends Vector implements JRDataSource {
 	
 	/**
 	 * 
-	 *  Last modified: $Date: 2004/10/08 10:15:36 $ by $Author: gummi $
+	 *  Last modified: $Date: 2006/02/20 17:58:48 $ by $Author: laddi $
 	 * 
 	 * @author <a href="mailto:gummi@idega.com">Gudmundur Agust Saemundsson</a>
-	 * @version $Revision: 1.11 $
+	 * @version $Revision: 1.12 $
 	 */
 	private class IWDataSource implements JRDataSource {
 
