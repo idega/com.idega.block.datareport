@@ -64,9 +64,6 @@ public class DesignDocument extends XMLDocument {
 	private static final String ATTRIBUTE_BOTTOM_MARGIN = "bottomMargin"; //NMTOKEN "30"
 	private static final String ATTRIBUTE_IS_TITLE_NEW_PAGE = "isTitleNewPage"; //(true | false) "false"	
 	private static final String ATTRIBUTE_IS_SUMMARY_NEW_PAGE = "isSummaryNewPage"; //(true | false) "false"
-	private static final String ATTRIBUTE_SCRIPTLET_CLASS = "scriptletClass"; //NMTOKEN #IMPLIED
-	
-	
 	private Vector _parameters = null;
 	private Vector _fields = new Vector();
 	private Title _title=null;

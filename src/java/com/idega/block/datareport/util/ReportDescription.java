@@ -1,5 +1,5 @@
 /*
- * $Id: ReportDescription.java,v 1.2 2005/11/29 12:54:07 laddi Exp $
+ * $Id: ReportDescription.java,v 1.3 2006/02/22 20:49:42 laddi Exp $
  * Created on 22.9.2004
  *
  * Copyright (C) 2004 Idega Software hf. All Rights Reserved.
@@ -20,10 +20,10 @@ import com.idega.util.datastructures.QueueMap;
 
 /**
  * 
- *  Last modified: $Date: 2005/11/29 12:54:07 $ by $Author: laddi $
+ *  Last modified: $Date: 2006/02/22 20:49:42 $ by $Author: laddi $
  * 
  * @author <a href="mailto:gummi@idega.com">Gudmundur Agust Saemundsson</a>
- * @version $Revision: 1.2 $
+ * @version $Revision: 1.3 $
  */
 public class ReportDescription {
 
@@ -34,7 +34,6 @@ public class ReportDescription {
 	private List _prmKeys = null;
 	private Map _prmTypeMap = null;
 	private Map _withMap = null;
-	private int _defaultWidth = 20;
 	private Locale _locale = null;
 	private boolean doCreateNewLineForEachParameter = true;
 	
