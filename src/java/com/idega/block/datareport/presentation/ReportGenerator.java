@@ -1102,22 +1102,6 @@ public class ReportGenerator extends Block {
 		private ReportGeneratorException() {
 			super();
 		}
-		/**
-		 * @param message
-		 */
-		private ReportGeneratorException(String message) {
-			super(message);
-		}
-
-		/**
-		 * @param cause
-		 */
-		private ReportGeneratorException(Throwable cause) {
-			super();
-			// jdk 1.3 - 1.4 fix
-			_cause = cause;
-
-		}
 
 		//	jdk 1.3 - 1.4 fix
 		public Throwable getCause() {
