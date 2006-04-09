@@ -93,14 +93,15 @@ public class DesignDocument extends XMLDocument {
 
 	
 	public XMLElement getRootElement() {
-		if (_rootElement == null)
-			_rootElement = super.getRootElement();
+		if (this._rootElement == null) {
+			this._rootElement = super.getRootElement();
+		}
 
-		return _rootElement;
+		return this._rootElement;
 	}
 	
 	public void setRootElement(XMLElement element) {
-		_rootElement = element;
+		this._rootElement = element;
 		super.setRootElement(element);
 	}
 	
@@ -108,10 +109,10 @@ public class DesignDocument extends XMLDocument {
 	//Adders
 	
 	public void addParameter(Parameter parm){
-		if(_parameters == null){
-			_parameters = new Vector();
+		if(this._parameters == null){
+			this._parameters = new Vector();
 		}
-		_parameters.add(parm);
+		this._parameters.add(parm);
 		//this.getRootElement().addContent(parm);
 	}
 	
@@ -141,7 +142,7 @@ public class DesignDocument extends XMLDocument {
 	
 	
 	public void addField(Field field){
-		_fields.add(field);
+		this._fields.add(field);
 		//this.getRootElement().addContent(field);
 	}
 	
@@ -217,58 +218,58 @@ public class DesignDocument extends XMLDocument {
 	
 	// Setters 
 	public void setTitle(Title title){
-		if(_title != null){
-			this.getRootElement().removeContent(_title);
+		if(this._title != null){
+			this.getRootElement().removeContent(this._title);
 		}
-		_title=title;
+		this._title=title;
 		//this.getRootElement().addContent(_title);
 	}
 	
 	public void setPageHeader(PageHeader pageHeader){
-		if(_pageHeader != null){
-			this.getRootElement().removeContent(_pageHeader);
+		if(this._pageHeader != null){
+			this.getRootElement().removeContent(this._pageHeader);
 		}
-		_pageHeader=pageHeader;
+		this._pageHeader=pageHeader;
 		//this.getRootElement().addContent(_pageHeader);
 	}
 	
 	public void setColumnHeader(ColumnHeader columnHeader){
-		if(_columnHeader != null){
-			this.getRootElement().removeContent(_columnHeader);
+		if(this._columnHeader != null){
+			this.getRootElement().removeContent(this._columnHeader);
 		}
-		_columnHeader=columnHeader;
+		this._columnHeader=columnHeader;
 		//this.getRootElement().addContent(_columnHeader);
 	}
 	
 	public void setDetail(Detail detail){
-		if(_detail != null){
-			this.getRootElement().removeContent(_detail);
+		if(this._detail != null){
+			this.getRootElement().removeContent(this._detail);
 		}
-		_detail=detail;
+		this._detail=detail;
 		//this.getRootElement().addContent(_detail);
 	}
 	
 	public void setColumnFooter(ColumnFooter columnFooter){
-		if(_columnFooter != null){
-			this.getRootElement().removeContent(_columnFooter);
+		if(this._columnFooter != null){
+			this.getRootElement().removeContent(this._columnFooter);
 		}
-		_columnFooter=columnFooter;
+		this._columnFooter=columnFooter;
 		//this.getRootElement().addContent(_columnFooter);
 	}
 	
 	public void setPageFooter(PageFooter pageFooter){
-		if(_pageFooter != null){
-			this.getRootElement().removeContent(_pageFooter);
+		if(this._pageFooter != null){
+			this.getRootElement().removeContent(this._pageFooter);
 		}
-		_pageFooter=pageFooter;
+		this._pageFooter=pageFooter;
 		//this.getRootElement().addContent(_pageFooter);
 	}
 	
 	public void setSummary(Summary summary){
-		if(_summary != null){
-			this.getRootElement().removeContent(_summary);
+		if(this._summary != null){
+			this.getRootElement().removeContent(this._summary);
 		}
-		_summary=summary;
+		this._summary=summary;
 		//this.getRootElement().addContent(_summary);
 	}
 	
@@ -360,49 +361,49 @@ public class DesignDocument extends XMLDocument {
 	 * @return
 	 */
 	public ColumnFooter getColumnFooter() {
-		return _columnFooter;
+		return this._columnFooter;
 	}
 
 	/**
 	 * @return
 	 */
 	public ColumnHeader getColumnHeader() {
-		return _columnHeader;
+		return this._columnHeader;
 	}
 
 	/**
 	 * @return
 	 */
 	public Detail getDetail() {
-		return _detail;
+		return this._detail;
 	}
 
 	/**
 	 * @return
 	 */
 	public PageFooter getPageFooter() {
-		return _pageFooter;
+		return this._pageFooter;
 	}
 
 	/**
 	 * @return
 	 */
 	public PageHeader getPageHeader() {
-		return _pageHeader;
+		return this._pageHeader;
 	}
 
 	/**
 	 * @return
 	 */
 	public Summary getSummary() {
-		return _summary;
+		return this._summary;
 	}
 
 	/**
 	 * @return
 	 */
 	public Title getTitle() {
-		return _title;
+		return this._title;
 	}
 	
 	
@@ -498,44 +499,44 @@ public class DesignDocument extends XMLDocument {
 	 * Use this method to close the document before writing it to file
 	 */
 	public void close(){
-		Iterator iter = _parameters.iterator();
+		Iterator iter = this._parameters.iterator();
 		while (iter.hasNext()) {
 			Parameter element = (Parameter)iter.next();
 			this.getRootElement().addContent(element);
 		}
 		
-		Iterator iter2 = _fields.iterator();
+		Iterator iter2 = this._fields.iterator();
 		while (iter2.hasNext()) {
 			Field element = (Field)iter2.next();
 			this.getRootElement().addContent(element);
 		}
 		
-		if(_title != null){
-			this.getRootElement().addContent(_title);
+		if(this._title != null){
+			this.getRootElement().addContent(this._title);
 		}
 		
-		if(_pageHeader != null){
-			this.getRootElement().addContent(_pageHeader);
+		if(this._pageHeader != null){
+			this.getRootElement().addContent(this._pageHeader);
 		}
 		
-		if(_columnHeader != null){
-			this.getRootElement().addContent(_columnHeader);
+		if(this._columnHeader != null){
+			this.getRootElement().addContent(this._columnHeader);
 		}
 		
-		if(_detail != null){
-			this.getRootElement().addContent(_detail);
+		if(this._detail != null){
+			this.getRootElement().addContent(this._detail);
 		}
 		
-		if(_columnFooter != null){
-			this.getRootElement().addContent(_columnFooter);
+		if(this._columnFooter != null){
+			this.getRootElement().addContent(this._columnFooter);
 		}
 		
-		if(_pageFooter != null){
-			this.getRootElement().addContent(_pageFooter);
+		if(this._pageFooter != null){
+			this.getRootElement().addContent(this._pageFooter);
 		}
 		
-		if(_summary != null){
-			this.getRootElement().addContent(_summary);
+		if(this._summary != null){
+			this.getRootElement().addContent(this._summary);
 		}
 	}
 	
