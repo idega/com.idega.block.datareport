@@ -11,6 +11,7 @@
     <project>com.idega.block.media</project>
     <project>com.idega.block.entity</project>
     <project>com.idega.block.dataquery</project>
+    <project>com.idega.block.web2.0</project>
   </projects>
   <buildSpec>
     <buildCommand>
