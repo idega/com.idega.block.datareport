@@ -622,15 +622,20 @@ public class ReportGenerator extends Block {
 						// lastTime = time4;
 					}
 					// System.out.println("[ReportGenerator]: generating report...");
-					generateReport();
-					// long time5 = System.currentTimeMillis();
-					// System.out.println("[ReportGenerator]: took " + (time5 - lastTime) + "ms, total of " + (time5 - time1) + "ms");
-					// lastTime = time5;
-					// System.out.println("[ReportGenerator]: getting link to the report");
-					this.add(getReportLink(iwc));
-					// long time6 = System.currentTimeMillis();
-					// System.out.println("[ReportGenerator]: took " + (time6 - lastTime) + "ms, total of " + (time6 - time1) + "ms");
-					// System.out.println("[ReportGenerator]: ...finished\n");
+					try {
+						generateReport();
+						// long time5 = System.currentTimeMillis();
+						// System.out.println("[ReportGenerator]: took " + (time5 - lastTime) + "ms, total of " + (time5 - time1) + "ms");
+						// lastTime = time5;
+						// System.out.println("[ReportGenerator]: getting link to the report");
+						this.add(getReportLink(iwc));
+						// long time6 = System.currentTimeMillis();
+						// System.out.println("[ReportGenerator]: took " + (time6 - lastTime) + "ms, total of " + (time6 - time1) + "ms");
+						// System.out.println("[ReportGenerator]: ...finished\n");
+					} catch (JRException e) {
+						this.add(iwrb.getLocalizedString("report_generator.error_generating_report","Error generating report"));
+						e.printStackTrace();
+					}
 
 				}
 			}
