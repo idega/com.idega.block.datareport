@@ -5,7 +5,7 @@
   <pomVersion>3</pomVersion>
   <name>idegaWeb Datareport Block</name>
   <artifactId>com.idega.block.datareport</artifactId>
-  <currentVersion>3.1.1</currentVersion>
+  <currentVersion>3.1.2</currentVersion>
   <versions>
     <version>
       <id>1.0</id>
@@ -26,6 +26,11 @@
       <id>3.1.1</id>
       <name>3.1.1</name>
       <tag>DATAREPORT_3_1_1</tag>
+    </version>
+    <version>
+      <id>3.1.2</id>
+      <name>3.1.2</name>
+      <tag>DATAREPORT_3_1_2</tag>
     </version>
   </versions>
   <branches/>
