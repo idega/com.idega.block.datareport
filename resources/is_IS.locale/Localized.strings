@@ -5,4 +5,5 @@ generate_report=\u00DAtb\u00FAa sk\u00FDrslu
 iw.component.com.idega.block.datareport.presentation.ReportGenerator.name=Sk\u00FDrslu sko\u00F0ari
 no_query_has_been_chosen_for_this_instance=Hluturinn er \u00F3stilltur, fari\u00F0 \u00ED properties og stilli\u00F0 hann fyrst.
 report_generator.error_generating_report=Villa kom upp vi\u00F0 a\u00F0 \u00FAtb\u00FAa sk\u00FDrslu
+report_name=\u00DAtb\u00FAin sk\u00FDrsla
 simple_excel=Excel (\u00E1n sni\u00F0m\u00E1ts)
