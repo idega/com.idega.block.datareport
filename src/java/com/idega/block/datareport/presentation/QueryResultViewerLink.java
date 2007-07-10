@@ -36,7 +36,7 @@ public class QueryResultViewerLink extends Link {
 	}
 
 	public void main(IWContext iwc) throws Exception {
-		setWindowToOpen(QueryResultViewer.class);
+		setWindowToOpen(QueryResultViewerWindow.class);
         if (this.text != null) {
         	super.setText(this.text);
         }
