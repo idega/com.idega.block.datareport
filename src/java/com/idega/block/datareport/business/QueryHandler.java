@@ -23,6 +23,7 @@ public class QueryHandler implements ICPropertyHandler {
 
 	public PresentationObject getHandlerObject(String name, String stringValue, IWContext iwc) {
 		DropdownMenu menu = new DropdownMenu(name);
+		menu.addMenuElement("", "");
 		try {
 			QueryService business = (QueryService) IBOLookup.getServiceInstance(iwc, QueryService.class);
 			Collection queries = business.getQueries(iwc);

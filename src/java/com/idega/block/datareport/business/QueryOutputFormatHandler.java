@@ -20,6 +20,7 @@ public class QueryOutputFormatHandler implements ICPropertyHandler {
 	public PresentationObject getHandlerObject(String name, String stringValue, IWContext iwc) {
 		IWResourceBundle iwrb = iwc.getIWMainApplication().getBundle(ENTITY_IW_BUNDLE_IDENTIFIER).getResourceBundle(iwc.getCurrentLocale());
 		DropdownMenu menu = new DropdownMenu(name);
+		menu.addMenuElement("", "");
 		menu.addMenuElement(QueryResultViewer.EXCEL_KEY, iwrb.getLocalizedString(QueryResultViewer.EXCEL_KEY, QueryResultViewer.EXCEL_KEY));
 		menu.addMenuElement(QueryResultViewer.PDF_KEY, iwrb.getLocalizedString(QueryResultViewer.PDF_KEY, QueryResultViewer.PDF_KEY));
 		menu.addMenuElement(QueryResultViewer.HTML_KEY, iwrb.getLocalizedString(QueryResultViewer.HTML_KEY, QueryResultViewer.HTML_KEY));
