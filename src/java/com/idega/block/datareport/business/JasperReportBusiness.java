@@ -16,6 +16,7 @@ public interface JasperReportBusiness extends com.idega.business.IBOService, Use
  public com.idega.block.datareport.data.DesignBox getDynamicDesignBox(com.idega.block.dataquery.data.sql.SQLQuery p0,com.idega.idegaweb.IWResourceBundle p1,com.idega.presentation.IWContext p2)throws java.io.IOException,JRException, java.rmi.RemoteException;
  public java.lang.String getExcelReport(JasperPrint p0,java.lang.String p1) throws java.rmi.RemoteException;
  public java.lang.String getHtmlReport(JasperPrint p0,java.lang.String p1) throws java.rmi.RemoteException;
+ public java.lang.String getXmlReport(JasperPrint p0,java.lang.String p1) throws java.rmi.RemoteException;
  public java.lang.String getPdfReport(JasperPrint p0,java.lang.String p1) throws java.rmi.RemoteException;
  public JasperPrint getReport(JRDataSource p0,java.util.Map p1,JasperDesign p2)throws JRException, java.rmi.RemoteException;
  public String getSynchronizedSimpleExcelReport(com.idega.block.dataquery.data.QueryResult p0,com.idega.block.datareport.data.DesignBox p2,java.lang.String p3) throws java.rmi.RemoteException;

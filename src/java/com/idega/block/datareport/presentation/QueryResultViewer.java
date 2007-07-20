@@ -81,6 +81,7 @@ public class QueryResultViewer extends Block {
 	public static final String PDF_KEY = "pdf_key";
 	public static final String EXCEL_KEY = "excel_key";
 	public static final String HTML_KEY = "html_key";
+	public static final String XML_KEY = "xml_key";
   
 	private QueryToSQLBridge bridge;
 	private SQLQuery query;
@@ -458,6 +459,9 @@ public class QueryResultViewer extends Block {
 	    	}
 	    	if (PDF_KEY.equals(this.outputFormat)) {
 	    		uri = reportBusiness.getPdfReport(print, "report");
+	    	}
+	    	if (XML_KEY.equals(this.outputFormat)) {
+	    		uri = reportBusiness.getXmlReport(print, "report");
 	    	}
 //  the method below uses JasperReport for generating an excel file.
 //  Commented out because JasperReport tries to keep the layout of the design for excel files. 

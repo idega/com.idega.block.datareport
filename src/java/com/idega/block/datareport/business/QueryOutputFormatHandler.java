@@ -24,6 +24,7 @@ public class QueryOutputFormatHandler implements ICPropertyHandler {
 		menu.addMenuElement(QueryResultViewer.EXCEL_KEY, iwrb.getLocalizedString(QueryResultViewer.EXCEL_KEY, QueryResultViewer.EXCEL_KEY));
 		menu.addMenuElement(QueryResultViewer.PDF_KEY, iwrb.getLocalizedString(QueryResultViewer.PDF_KEY, QueryResultViewer.PDF_KEY));
 		menu.addMenuElement(QueryResultViewer.HTML_KEY, iwrb.getLocalizedString(QueryResultViewer.HTML_KEY, QueryResultViewer.HTML_KEY));
+		menu.addMenuElement(QueryResultViewer.XML_KEY, iwrb.getLocalizedString(QueryResultViewer.XML_KEY, QueryResultViewer.XML_KEY));
 		menu.setSelectedElement(stringValue);
 		return menu;
 	}

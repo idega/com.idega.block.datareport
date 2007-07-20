@@ -74,6 +74,7 @@ public class JasperReportBusinessBean extends IBOServiceBean implements JasperRe
   
   private static String REPORT_FOLDER = "reports";
   private static String HTML_FILE_EXTENSION = "html";
+  private static String XML_FILE_EXTENSION = "xml";
   private static String PDF_FILE_EXTENSION = "pdf";
   private static String EXCEL_FILE_EXTENSION = "xls";
   
@@ -134,6 +135,21 @@ public class JasperReportBusinessBean extends IBOServiceBean implements JasperRe
     }
     return getURIToReport(nameOfReport, HTML_FILE_EXTENSION,folderIdentifier);
   }
+
+  public String getXmlReport(JasperPrint print, String nameOfReport) {
+	    // prepare path
+	    long folderIdentifier = System.currentTimeMillis();
+	    String path = getRealPathToReportFile(nameOfReport, XML_FILE_EXTENSION,folderIdentifier);
+	    try {
+	    	JasperExportManager.exportReportToXmlFile(print, path, false);
+	    }
+	    catch (JRException ex)  {
+	    	logError("[ReportBusiness]: Jasper print could not be generated.");
+	    	log(ex);
+	    	return null;
+	    }
+	    return getURIToReport(nameOfReport, XML_FILE_EXTENSION,folderIdentifier);
+	  }
   
   public String getPdfReport(JasperPrint print, String nameOfReport) {
     // prepare path
