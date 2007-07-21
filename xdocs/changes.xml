@@ -7,6 +7,7 @@
 		<release version="3.1.3" date="2007-07-10">
 			<action dev="sigtryggur" type="update">
 				Added new presentationobject, QueryResultViewerLink, to open selected reports from the reportgenerator on a builder page
+				Added XML as a new output format for japser reports
 			</action>
 		</release>
 		<release version="3.1.2" date="2007-04-11">
