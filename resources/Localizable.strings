@@ -15,3 +15,4 @@ pdf=PDF
 report_generator.error_generating_report=Error generating report
 report_name=Generated Report
 simple_excel=Excel without template
+xml=XML
