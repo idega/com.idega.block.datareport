@@ -61,6 +61,7 @@ public class ReportQueryOverview extends Block {
   public static final String DELETE_KEY = "delete_key";
   public static final String PDF_KEY = "pdf_key";
   public static final String EXCEL_KEY = "excel_key";
+  public static final String XML_KEY = "xml_key";
   public static final String HTML_KEY = "html_key";
   public static final String EDIT_QUERY_SIMPLE_MODE_KEY = "edit_simple_mode_key";
   public static final String EDIT_QUERY_EXPERT_MODE_KEY ="edit_expert_mode_key";
@@ -356,11 +357,13 @@ public class ReportQueryOverview extends Block {
 			
 		// checkbox converter
 		ButtonConverter htmlConverter = new ButtonConverter(bundle.getImage("/shared/txt.gif"));
+		ButtonConverter xmlConverter = new ButtonConverter(bundle.getImage("/shared/txt.gif"));
 		ButtonConverter pdfConverter = new ButtonConverter(bundle.getImage("/shared/pdf.gif"));
 		ButtonConverter excelConverter = new ButtonConverter(bundle.getImage("/shared/xls.gif"));
 		// change target
 		String click = getChangeTargetScript(); //QueryResultViewerWindow.class);
 		htmlConverter.setOnClick(click);
+		xmlConverter.setOnClick(click);
 		pdfConverter.setOnClick(click);
 		excelConverter.setOnClick(click);
 		
@@ -371,12 +374,13 @@ public class ReportQueryOverview extends Block {
 		browser.setMandatoryColumnWithConverter(5, QueryRepresentation.DESIGN_LAYOUT_KEY, dropDownLayoutConverter);
 		
 		browser.setMandatoryColumnWithConverter(6, HTML_KEY, htmlConverter);
-		browser.setMandatoryColumnWithConverter(7, PDF_KEY, pdfConverter);
-		browser.setMandatoryColumnWithConverter(8, EXCEL_KEY, excelConverter);
+		browser.setMandatoryColumnWithConverter(7, XML_KEY, xmlConverter);
+		browser.setMandatoryColumnWithConverter(8, PDF_KEY, pdfConverter);
+		browser.setMandatoryColumnWithConverter(9, EXCEL_KEY, excelConverter);
 		
-		browser.setMandatoryColumnWithConverter(9, EDIT_QUERY_SIMPLE_MODE_KEY, simpleEditQueryConverter);
+		browser.setMandatoryColumnWithConverter(10, EDIT_QUERY_SIMPLE_MODE_KEY, simpleEditQueryConverter);
 		if (this.isAdmin) {
-			browser.setMandatoryColumnWithConverter(10, EDIT_QUERY_EXPERT_MODE_KEY, expertEditQueryConverter);
+			browser.setMandatoryColumnWithConverter(11, EDIT_QUERY_EXPERT_MODE_KEY, expertEditQueryConverter);
 		}
 		return browser;
 	}		

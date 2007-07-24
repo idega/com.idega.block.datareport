@@ -83,6 +83,7 @@ import com.idega.xml.XMLException;
 public class ReportGenerator extends Block {
 
 	private static final String HTML_FORMAT = "html";
+	private static final String XML_FORMAT = "xml";
 	private static final String PDF_FORMAT = "pdf";
 	private static final String EXCEL_FORMAT = "excel";
 	private static final String SIMPLE_EXCEL_FORMAT = "simple_excel";
@@ -121,6 +122,7 @@ public class ReportGenerator extends Block {
 	private String PRM_REPORT_NAME = "report_name";
 
 	private boolean _generateExcelReport = true;
+	private boolean _generateXMLReport = true;
 	private boolean _generateHTMLReport = true;
 	private boolean _generatePDFReport = true;
 	private boolean _generateSimpleExcelReport = true;
@@ -485,6 +487,10 @@ public class ReportGenerator extends Block {
 					this._reportFilePathsMap.put(HTML_FORMAT, business.getHtmlReport(print, "report"));
 				}
 
+				if (this._generateXMLReport) {
+					this._reportFilePathsMap.put(XML_FORMAT, business.getXmlReport(print, "report"));
+				}
+
 			}
 
 			if (this._generateSimpleExcelReport && (this._dataSource instanceof ReportableCollection)) {
@@ -500,7 +506,7 @@ public class ReportGenerator extends Block {
 	 * @return
 	 */
 	private boolean doGenerateSomeJasperReport() {
-		return (this._generateExcelReport || this._generateHTMLReport || this._generatePDFReport);
+		return (this._generateExcelReport || this._generateHTMLReport || this._generateXMLReport || this._generatePDFReport);
 	}
 
 	public JasperReportBusiness getReportBusiness() {
@@ -765,8 +771,8 @@ public class ReportGenerator extends Block {
 		reports.mergeCells(1, 1, 2, 1);
 		reports.add(getResourceBundle(iwc).getLocalizedString("ReportGenerator.click_on_format", "Select a link for the desired output format."), 1, 1);
 
-		String formats[] = new String[] { EXCEL_FORMAT, SIMPLE_EXCEL_FORMAT, PDF_FORMAT, HTML_FORMAT };
-		String formatNames[] = new String[] { iwrb.getLocalizedString(EXCEL_FORMAT, "Excel"), iwrb.getLocalizedString(SIMPLE_EXCEL_FORMAT, "Excel without template"), iwrb.getLocalizedString(PDF_FORMAT, "PDF"), iwrb.getLocalizedString(HTML_FORMAT, "HTML") };
+		String formats[] = new String[] { EXCEL_FORMAT, SIMPLE_EXCEL_FORMAT, PDF_FORMAT, XML_FORMAT, HTML_FORMAT };
+		String formatNames[] = new String[] { iwrb.getLocalizedString(EXCEL_FORMAT, "Excel"), iwrb.getLocalizedString(SIMPLE_EXCEL_FORMAT, "Excel without template"), iwrb.getLocalizedString(PDF_FORMAT, "PDF"), iwrb.getLocalizedString(XML_FORMAT, "XML"), iwrb.getLocalizedString(HTML_FORMAT, "HTML") };
 
 		int j = 1;
 		for (int i = 0; i < formats.length; i++) {
@@ -1003,6 +1009,10 @@ public class ReportGenerator extends Block {
 	
 	public void setGenerateExcelReport(boolean value) {
 		this._generateExcelReport = value;
+	}
+
+	public void setGenerateXMLReport(boolean value) {
+		this._generateXMLReport = value;
 	}
 
 	public void setGenerateHTMLReport(boolean value) {
