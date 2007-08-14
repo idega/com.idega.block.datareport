@@ -21,7 +21,7 @@ public class QueryHandler implements ICPropertyHandler {
 		return null;
 	}
 
-	public PresentationObject getHandlerObject(String name, String stringValue, IWContext iwc) {
+	public PresentationObject getHandlerObject(String name, String stringValue, IWContext iwc, boolean oldGenerationHandler, String instanceId, String method) {
 		DropdownMenu menu = new DropdownMenu(name);
 		menu.addMenuElement("", "");
 		try {
