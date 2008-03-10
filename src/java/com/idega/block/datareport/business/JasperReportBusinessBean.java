@@ -122,7 +122,12 @@ public class JasperReportBusinessBean extends IBOServiceBean implements JasperRe
 		  JRHtmlExporter exporter = new JRHtmlExporter();
 			//to handle icelandic in html
 			//saw this in the JRHTMLExport of jasperreports	
-		  exporter.setParameter(JRExporterParameter.CHARACTER_ENCODING,"iso-8859-1");
+
+		  String enc = getIWMainApplication().getSettings().getCharacterEncoding();
+		  if (enc == null) {
+			  enc = "UTF-8";
+		  }
+		  exporter.setParameter(JRExporterParameter.CHARACTER_ENCODING,enc);
 		  exporter.setParameter(JRExporterParameter.JASPER_PRINT, print);
 		  exporter.setParameter(JRExporterParameter.OUTPUT_FILE_NAME, path);
 		    
