@@ -187,8 +187,7 @@ public class LayoutUploader extends Block {
 			while (iterator.hasNext()) {
 				ICTreeNode node = (ICTreeNode) iterator.next();
 				String name = node.getNodeName();
-				int id = node.getNodeID();
-				String idAsString = Integer.toString(id);
+				String idAsString = node.getId();
 				if (sortedMap.containsKey(name)) {
 					// usually all items have different names therefore 
 					// we implement a very simple solution

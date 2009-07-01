@@ -403,8 +403,7 @@ public class ReportQueryOverview extends Block {
 		  						ICFile node = (ICFile) iterator.next();
 		  						if (!node.isFolder()) {
 		  							String name = node.getNodeName();
-			  						int id = node.getNodeID();
-			  						String idAsString = Integer.toString(id);
+			  						String idAsString = node.getId().toString();
 			  						this.optionMap.put(idAsString, name);
 		  						}
 		  					}
