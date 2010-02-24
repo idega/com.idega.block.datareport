@@ -87,42 +87,42 @@
     <dependency>
       <groupId>bundles</groupId>
       <artifactId>com.idega.core</artifactId>
-      <version>3.1.70</version>
+      <version>3.1.94</version>
       <type>jar</type>
       <url>http://www.idega.com/</url>
     </dependency>
     <dependency>
       <groupId>bundles</groupId>
       <artifactId>com.idega.user</artifactId>
-      <version>3.1.5</version>
+      <version>3.1.23</version>
       <type>jar</type>
       <url>http://www.idega.com/</url>
     </dependency>
     <dependency>
       <groupId>bundles</groupId>
       <artifactId>com.idega.builder</artifactId>
-      <version>3.1.6</version>
+      <version>3.1.17</version>
       <type>jar</type>
       <url>http://www.idega.com/</url>
     </dependency>
     <dependency>
       <groupId>bundles</groupId>
       <artifactId>com.idega.block.media</artifactId>
-      <version>3.1.0</version>
+      <version>3.1.1</version>
       <type>jar</type>
       <url>http://www.idega.com/</url>
     </dependency>
     <dependency>
       <groupId>bundles</groupId>
       <artifactId>com.idega.block.entity</artifactId>
-      <version>3.1.0</version>
+      <version>3.1.1</version>
       <type>jar</type>
       <url>http://www.idega.com/</url>
     </dependency>
     <dependency>
       <groupId>bundles</groupId>
       <artifactId>com.idega.block.dataquery</artifactId>
-      <version>3.1.1</version>
+      <version>3.1.2</version>
       <type>jar</type>
       <url>http://www.idega.com/</url>
       <properties>
