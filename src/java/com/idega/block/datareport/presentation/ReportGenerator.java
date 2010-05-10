@@ -1038,12 +1038,12 @@ public class ReportGenerator extends Block {
 		// private String _localizedKey = null;
 		// private String _defaultUserFriendlyMessage = null;
 
-		public ReportGeneratorException(String tecnicalMessage, Throwable cause, String localizedMessage) {
+		/*public ReportGeneratorException(String tecnicalMessage, Throwable cause, String localizedMessage) {
 			this(tecnicalMessage, cause);
 			this._localizedMessage = localizedMessage;
 			// _localizedKey = localizedKey;
 			// _defaultUserFriendlyMessage = defaultUserFriendlyMessage;
-		}
+		}*/
 
 		/**
 		 * @param message
