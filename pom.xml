@@ -83,9 +83,9 @@
       <type>jar</type>
     </dependency>
     <dependency>
-      <groupId>poi</groupId>
+      <groupId>org.apache.poi</groupId>
       <artifactId>poi</artifactId>
-      <version>${poi-poi-version}</version>
+      <version>${org.apache.poi-poi-version}</version>
       <type>jar</type>
     </dependency>
   </dependencies>
