@@ -306,7 +306,7 @@ public class ReportGeneratorThread extends Thread {
 
 					try {
 						com.idega.util.SendMail.send(fromAddress, email.trim(),
-								null, "", mailServer, "Excel", body, file);
+								null, "", mailServer, "PDF", body, file);
 					} catch (javax.mail.MessagingException me) {
 						System.err
 								.println("MessagingException when sending mail to address: "
@@ -358,7 +358,7 @@ public class ReportGeneratorThread extends Thread {
 
 					try {
 						com.idega.util.SendMail.send(fromAddress, email.trim(),
-								null, "", mailServer, "Excel", body, file);
+								null, "", mailServer, "HTML", body, file);
 					} catch (javax.mail.MessagingException me) {
 						System.err
 								.println("MessagingException when sending mail to address: "
@@ -384,7 +384,7 @@ public class ReportGeneratorThread extends Thread {
 
 					try {
 						com.idega.util.SendMail.send(fromAddress, email.trim(),
-								null, "", mailServer, "Excel", body, file);
+								null, "", mailServer, "XML", body, file);
 					} catch (javax.mail.MessagingException me) {
 						System.err
 								.println("MessagingException when sending mail to address: "
@@ -416,7 +416,7 @@ public class ReportGeneratorThread extends Thread {
 
 				try {
 					com.idega.util.SendMail.send(fromAddress, email.trim(),
-							null, "", mailServer, "Excel", body, file);
+							null, "", mailServer, "Excel no stylesheet", body, file);
 				} catch (javax.mail.MessagingException me) {
 					System.err
 							.println("MessagingException when sending mail to address: "
