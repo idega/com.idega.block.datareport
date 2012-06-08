@@ -17,6 +17,7 @@ import java.sql.Time;
 import java.sql.Timestamp;
 import java.text.DateFormat;
 import java.text.ParseException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -55,6 +56,7 @@ import com.idega.block.datareport.xml.methodinvocation.MethodInvocationParser;
 import com.idega.business.HiddenInputHandler;
 import com.idega.business.IBOLookup;
 import com.idega.business.InputHandler;
+import com.idega.core.accesscontrol.business.AccessController;
 import com.idega.core.file.data.ICFile;
 import com.idega.data.IDOLookup;
 import com.idega.data.IDOLookupException;
@@ -72,9 +74,10 @@ import com.idega.presentation.ui.HiddenInput;
 import com.idega.presentation.ui.InterfaceObject;
 import com.idega.presentation.ui.SubmitButton;
 import com.idega.presentation.ui.TextInput;
+import com.idega.user.business.GroupBusiness;
+import com.idega.user.data.Group;
 import com.idega.user.data.User;
 import com.idega.util.IWTimestamp;
-import com.idega.util.Timer;
 import com.idega.util.reflect.MethodFinder;
 import com.idega.xml.XMLException;
 
@@ -479,8 +482,8 @@ public class ReportGenerator extends Block {
 					Method method = null;
 
 					if (this.runAsThread) {
-						Object threadPrmVal[] = new Object[prmVal.length + 4];
-						Class[] threadParamTypes = new Class[paramTypes.length + 4];
+						Object threadPrmVal[] = new Object[prmVal.length + 6];
+						Class[] threadParamTypes = new Class[paramTypes.length + 6];
 						int i = 0;
 						for (; i < prmVal.length; i++) {
 							threadPrmVal[i] = prmVal[i];
@@ -493,7 +496,55 @@ public class ReportGenerator extends Block {
 						threadPrmVal[i] = iwc.getCurrentUser();
 						threadParamTypes[i++] = User.class;;
 						threadPrmVal[i] = iwc.getSessionAttribute(SESSION_KEY_TOP_NODES + iwc.getCurrentUser().getPrimaryKey().toString());
+						threadParamTypes[i++] = Collection.class;
+						
+						//Hack, fix later
+						Group group = null;
+						Collection groups = null;
+						String groupIDFilter = (String) prmVal[0];
+						String groupsRecursiveFilter = (String) prmVal[1];
+						Collection groupTypesFilter = (Collection) prmVal[2];
+
+						try {
+							if (groupIDFilter != null && !groupIDFilter.equals("")) {
+								groupIDFilter = groupIDFilter.substring(groupIDFilter
+										.lastIndexOf("_") + 1);
+								group = getGroupBusiness().getGroupByGroupID(
+										Integer.parseInt((groupIDFilter)));
+								if (group.isAlias()) {
+									group = group.getAlias();
+								}
+							}
+							if (group != null) {
+								if (groupsRecursiveFilter != null
+										&& groupsRecursiveFilter.equals("checked")) {
+									groups = getGroupBusiness()
+											.getChildGroupsRecursiveResultFiltered(group,
+													groupTypesFilter, true, true, true);
+								} else {
+									groups = new ArrayList();
+								}
+								groups.add(group);
+
+								Iterator it2 = groups.iterator();
+								Collection viewGroups = new ArrayList();
+								while (it2.hasNext()) {
+									Group g = (Group) it2.next();
+									if (hasViewPermission(iwc, iwc.getCurrentUser(), g))
+										viewGroups.add(g);
+								}
+
+								groups = viewGroups;
+							}
+						} catch (FinderException e) {
+							e.printStackTrace();
+						}
+
+						
+						threadPrmVal[i] = groups;
 						threadParamTypes[i++] = Collection.class;;
+						threadPrmVal[i] = group;
+						threadParamTypes[i++] = Group.class;;
 						
 						method = mf.getMethodWithNameAndParameters(mainClass, methodName, threadParamTypes);
 						
@@ -537,6 +588,80 @@ public class ReportGenerator extends Block {
 		return null;
 	}
 
+	private GroupBusiness getGroupBusiness() throws RemoteException {
+		return (GroupBusiness) IBOLookup.getServiceInstance(
+					this.getIWApplicationContext(), GroupBusiness.class);
+	}
+
+	private boolean hasViewPermission(IWContext iwc, User user, Group group) {
+		AccessController accessController = iwc.getAccessController();
+
+		boolean isCurrentUserSuperAdmin = iwc.isSuperAdmin();
+
+		boolean hasViewPermissionForRealGroup = isCurrentUserSuperAdmin;
+		//boolean hasEditPermissionForRealGroup = isCurrentUserSuperAdmin;
+		//boolean hasDeletePermissionForRealGroup = isCurrentUserSuperAdmin;
+		boolean hasOwnerPermissionForRealGroup = isCurrentUserSuperAdmin;
+		boolean hasPermitPermissionForRealGroup = isCurrentUserSuperAdmin;
+
+		try {
+			if (!isCurrentUserSuperAdmin) {
+				if (group.getAlias() != null) {// thats the real group
+					hasOwnerPermissionForRealGroup = accessController.isOwner(
+							group.getAlias(), iwc);
+					if (!hasOwnerPermissionForRealGroup) {
+						hasViewPermissionForRealGroup = accessController
+								.hasViewPermissionFor(group.getAlias(),
+										iwc);
+						//hasEditPermissionForRealGroup = accessController
+						//		.hasEditPermissionFor(group.getAlias(),
+						//				this.getUserContext());
+						//hasDeletePermissionForRealGroup = accessController
+						//		.hasDeletePermissionFor(group.getAlias(),
+						//				this.getUserContext());
+						hasPermitPermissionForRealGroup = accessController
+								.hasPermitPermissionFor(group.getAlias(),
+										iwc);
+					} else {
+						// the user is the owner so he can do anything
+						hasViewPermissionForRealGroup = true;
+						//hasEditPermissionForRealGroup = true;
+						//hasDeletePermissionForRealGroup = true;
+						hasPermitPermissionForRealGroup = true;
+					}
+				} else if (group != null) {
+					hasOwnerPermissionForRealGroup = accessController.isOwner(
+							group, iwc);
+					if (!hasOwnerPermissionForRealGroup) {
+						hasViewPermissionForRealGroup = accessController
+								.hasViewPermissionFor(group,
+										iwc);
+						//hasEditPermissionForRealGroup = accessController
+						//		.hasEditPermissionFor(group,
+						//				this.getUserContext());
+						//hasDeletePermissionForRealGroup = accessController
+						//		.hasDeletePermissionFor(group,
+						//				this.getUserContext());
+						hasPermitPermissionForRealGroup = accessController
+								.hasPermitPermissionFor(group,
+										iwc);
+					} else {
+						// the user is the owner so he can do anything
+						hasViewPermissionForRealGroup = true;
+						//hasEditPermissionForRealGroup = true;
+						//hasDeletePermissionForRealGroup = true;
+						hasPermitPermissionForRealGroup = true;
+					}
+				}
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
+		return hasViewPermissionForRealGroup || hasPermitPermissionForRealGroup;
+	}
+
+	
 	private void generateReport() throws RemoteException, JRException {
 		JasperReportBusiness business = getReportBusiness();
 		if (this.dataSource != null) {
