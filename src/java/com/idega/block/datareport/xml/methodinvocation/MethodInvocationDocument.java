@@ -10,7 +10,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-import org.jdom.DocType;
+import org.jdom2.DocType;
 
 import com.idega.xml.XMLDocument;
 import com.idega.xml.XMLElement;
@@ -25,9 +25,10 @@ import com.idega.xml.XMLException;
  * @version		1.0
  */
 public class MethodInvocationDocument extends XMLDocument {
-	
-	
-	private List _methodDescriptions = new ArrayList();
+
+	private static final long serialVersionUID = -1526864952024915241L;
+
+	private List<MethodDescription> _methodDescriptions = new ArrayList<MethodDescription>();
 
 	private XMLElement _rootElement=null;
 
@@ -39,7 +40,7 @@ public class MethodInvocationDocument extends XMLDocument {
 		super(element);
 		setDocType();
 	}
-	
+
 	/**
 	 * @param element
 	 */
@@ -54,24 +55,25 @@ public class MethodInvocationDocument extends XMLDocument {
 		this();
 		initialize(document);
 	}
-	
+
 	private void setDocType(){
 		DocType docType = new DocType("invoke");
 		this.setDocType(docType);
 	}
-	
+
 	private void initialize(XMLDocument document) throws XMLException {
-		List methodDescriptions = document.getRootElement().getChildren(MethodDescription.NAME);
-		Iterator iter = methodDescriptions.iterator();
+		List<XMLElement> methodDescriptions = document.getRootElement().getChildren(MethodDescription.NAME);
+		Iterator<XMLElement> iter = methodDescriptions.iterator();
 		if(iter != null){
 			while (iter.hasNext()) {
-				XMLElement element = (XMLElement)iter.next();
+				XMLElement element = iter.next();
 				this._methodDescriptions.add(new MethodDescription(element));
 			}
 		}
 	}
 
-	
+
+	@Override
 	public XMLElement getRootElement() {
 		if (this._rootElement == null) {
 			this._rootElement = super.getRootElement();
@@ -79,25 +81,25 @@ public class MethodInvocationDocument extends XMLDocument {
 
 		return this._rootElement;
 	}
-	
+
+	@Override
 	public void setRootElement(XMLElement element) {
 		this._rootElement = element;
 		super.setRootElement(element);
 	}
-	
+
 	/**
 	 * Use this method to close the document before writing it to file
 	 */
 	public void close(){
-		Iterator iter = this._methodDescriptions.iterator();
-		while (iter.hasNext()) {
-			MethodDescription element = (MethodDescription)iter.next();
+		for (Iterator<MethodDescription> iter = this._methodDescriptions.iterator(); iter.hasNext();) {
+			MethodDescription element = iter.next();
 			element.close();
 			this.getRootElement().addContent(element);
 		}
 	}
-	
-	public List getMethodDescriptions(){
+
+	public List<MethodDescription> getMethodDescriptions(){
 		return this._methodDescriptions;
 	}
 
