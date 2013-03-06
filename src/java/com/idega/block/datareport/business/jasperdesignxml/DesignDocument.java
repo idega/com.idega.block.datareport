@@ -548,7 +548,7 @@ public class DesignDocument extends XMLDocument {
 //				XMLElement element = (XMLElement)iter.next();
 //				if(element.getName().equals(Parameter.ELEMENT_NAME)){
 //					Parameter prm = new Parameter();
-//					//Vantar að geta búið til parameter klasa út frá XMLElement
+//					//Vantar aÃ° geta bÃºiÃ° til parameter klasa Ãºt frÃ¡ XMLElement
 //				}
 //					
 //			}
