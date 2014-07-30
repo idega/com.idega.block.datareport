@@ -491,7 +491,11 @@ public class ReportGenerator extends Block {
 						}
 						threadPrmVal[i] = iwc.getCurrentLocale();
 						threadParamTypes[i++] = Locale.class;
-						threadPrmVal[i] = iwc.isSuperAdmin();
+						if(iwc.isSuperAdmin()){
+							threadPrmVal[i] = Boolean.TRUE;
+						}else{
+							threadPrmVal[i] = Boolean.FALSE;
+						}
 						threadParamTypes[i++] = Boolean.class;
 						threadPrmVal[i] = iwc.getCurrentUser();
 						threadParamTypes[i++] = User.class;;

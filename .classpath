@@ -7,7 +7,7 @@
   <classpathentry kind="var" path="MAVEN_REPO/bundles/jars/com.idega.core-3.1.70.jar"></classpathentry>
   <classpathentry kind="var" path="MAVEN_REPO/bundles/jars/com.idega.user-3.1.5.jar"></classpathentry>
   <classpathentry kind="var" path="MAVEN_REPO/bundles/jars/com.idega.builder-3.1.6.jar"></classpathentry>
-  <classpathentry kind="var" path="MAVEN_REPO/bundles/jars/com.idega.block.media-3.1.0.jar"></classpathentry>
+  <classpathentry kind="var" path="MAVEN_REPO/bundles/jars/com.idega.block.media-3.1.1.jar"></classpathentry>
   <classpathentry kind="var" path="MAVEN_REPO/bundles/jars/com.idega.block.entity-3.1.0.jar"></classpathentry>
   <classpathentry kind="src" path="/com.idega.block.dataquery"></classpathentry>
   <classpathentry kind="var" path="MAVEN_REPO/poi/jars/poi-2.5-final-20040428.jar"></classpathentry>
