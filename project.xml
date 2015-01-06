@@ -129,12 +129,13 @@
         <eclipse.dependency>true</eclipse.dependency>
       </properties>
     </dependency>
-    <dependency>
-      <groupId>poi</groupId>
+     <dependency>
+      <groupId>org.apache.poi</groupId>
       <artifactId>poi</artifactId>
-      <version>2.5-final-20040428</version>
+      <version>3.7</version>
       <type>jar</type>
       <url>http://jakarta.apache.org/poi/</url>
+      <properties/>
     </dependency>
   </dependencies>
 </project>
