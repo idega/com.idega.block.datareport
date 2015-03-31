@@ -17,7 +17,7 @@ public class QueryOutputFormatHandler implements ICPropertyHandler {
 		return null;
 	}
 
-	public PresentationObject getHandlerObject(String name, String stringValue, IWContext iwc, boolean oldGenerationHandler, String instanceId, String method) {
+	public PresentationObject getHandlerObject(String name, String stringValue, IWContext iwc) {
 		IWResourceBundle iwrb = iwc.getIWMainApplication().getBundle(ENTITY_IW_BUNDLE_IDENTIFIER).getResourceBundle(iwc.getCurrentLocale());
 		DropdownMenu menu = new DropdownMenu(name);
 		menu.addMenuElement("", "");
