@@ -17,15 +17,21 @@ import com.idega.presentation.ui.DropdownMenu;
 
 public class QueryHandler implements ICPropertyHandler {
 
+	@Override
 	public List getDefaultHandlerTypes() {
 		return null;
 	}
 
-	public PresentationObject getHandlerObject(String name, String stringValue, IWContext iwc) {
+	@Override
+	public void onUpdate(String[] values, IWContext iwc) {
+	}
+
+	@Override
+	public PresentationObject getHandlerObject(String name, String stringValue, IWContext iwc, boolean oldGenerationHandler, String instanceId, String method) {
 		DropdownMenu menu = new DropdownMenu(name);
 		menu.addMenuElement("", "");
 		try {
-			QueryService business = (QueryService) IBOLookup.getServiceInstance(iwc, QueryService.class);
+			QueryService business = IBOLookup.getServiceInstance(iwc, QueryService.class);
 			Collection queries = business.getQueries(iwc);
 			if (queries != null) {
 				Iterator iter = queries.iterator();
@@ -44,8 +50,5 @@ public class QueryHandler implements ICPropertyHandler {
 		}
 
 		return menu;
-	}
-
-	public void onUpdate(String[] values, IWContext iwc) {
 	}
 }

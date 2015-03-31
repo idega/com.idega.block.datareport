@@ -13,11 +13,17 @@ public class QueryOutputFormatHandler implements ICPropertyHandler {
 
 	public static final String ENTITY_IW_BUNDLE_IDENTIFIER = "com.idega.block.entity";
 
+	@Override
 	public List getDefaultHandlerTypes() {
 		return null;
 	}
 
-	public PresentationObject getHandlerObject(String name, String stringValue, IWContext iwc) {
+	@Override
+	public void onUpdate(String[] arg0, IWContext arg1) {
+	}
+
+	@Override
+	public PresentationObject getHandlerObject(String name, String stringValue, IWContext iwc, boolean oldGenerationHandler, String instanceId, String method) {
 		IWResourceBundle iwrb = iwc.getIWMainApplication().getBundle(ENTITY_IW_BUNDLE_IDENTIFIER).getResourceBundle(iwc.getCurrentLocale());
 		DropdownMenu menu = new DropdownMenu(name);
 		menu.addMenuElement("", "");
@@ -27,8 +33,5 @@ public class QueryOutputFormatHandler implements ICPropertyHandler {
 		menu.addMenuElement(QueryResultViewer.XML_KEY, iwrb.getLocalizedString(QueryResultViewer.XML_KEY, QueryResultViewer.XML_KEY));
 		menu.setSelectedElement(stringValue);
 		return menu;
-	}
-
-	public void onUpdate(String[] arg0, IWContext arg1) {
 	}
 }
