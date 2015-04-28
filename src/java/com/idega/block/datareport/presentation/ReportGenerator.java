@@ -1,6 +1,6 @@
 /*
  * Created on 15.7.2003
- * 
+ *
  * To change the template for this generated file go to Window>Preferences>Java>Code Generation>Code and Comments
  */
 package com.idega.block.datareport.presentation;
@@ -83,7 +83,7 @@ import com.idega.xml.XMLException;
 
 /**
  * Title: ReportGenerator Description: Copyright: Copyright (c) 2003 Company: idega Software
- * 
+ *
  * @author 2003 - idega team -<br>
  *         <a href="mailto:gummi@idega.is">Gudmundur Agust Saemundsson</a><br>
  * @version 1.0
@@ -138,14 +138,15 @@ public class ReportGenerator extends Block {
 
 	private boolean runAsThread = false;
 	private String email = null;
-	
+
 	/**
-	 * 
+	 *
 	 */
 	public ReportGenerator() {
 		super();
 	}
 
+	@Override
 	public String getBundleIdentifier() {
 		return IW_BUNDLE_IDENTIFIER;
 	}
@@ -345,13 +346,13 @@ public class ReportGenerator extends Block {
 		}
 		// add parameters and fields
 	}
-	
+
 	public class ThreadRunDataSourceCollector {
 		private Method method;
 		private ReportDescription description;
 		private Object forInvocationOfMethod;
 		private Object[] prmVal;
-		
+
 		public Method getMethod() {
 			return method;
 		}
@@ -376,13 +377,13 @@ public class ReportGenerator extends Block {
 		public void setPrmVal(Object[] prmVal) {
 			this.prmVal = prmVal;
 		}
-		
+
 	}
-	
+
 	private ThreadRunDataSourceCollector generateDataSource(IWContext iwc) throws XMLException, Exception {
 		Locale currentLocale = iwc.getCurrentLocale();
 		if (this.queryPK != null) {
-			QueryService service = (QueryService) (IBOLookup.getServiceInstance(iwc, QueryService.class));
+			QueryService service = (IBOLookup.getServiceInstance(iwc, QueryService.class));
 			this.dataSource = service.generateQueryResult(this.queryPK, iwc);
 		}
 		else if (this.methodInvokeDoc != null) {
@@ -497,7 +498,7 @@ public class ReportGenerator extends Block {
 						threadParamTypes[i++] = User.class;;
 						threadPrmVal[i] = iwc.getSessionAttribute(SESSION_KEY_TOP_NODES + iwc.getCurrentUser().getPrimaryKey().toString());
 						threadParamTypes[i++] = Collection.class;
-						
+
 						//Hack, fix later
 						Group group = null;
 						Collection groups = null;
@@ -540,25 +541,25 @@ public class ReportGenerator extends Block {
 							e.printStackTrace();
 						}
 
-						
+
 						threadPrmVal[i] = groups;
 						threadParamTypes[i++] = Collection.class;;
 						threadPrmVal[i] = group;
 						threadParamTypes[i++] = Group.class;;
-						
+
 						method = mf.getMethodWithNameAndParameters(mainClass, methodName, threadParamTypes);
-						
+
 						ThreadRunDataSourceCollector ret = new ThreadRunDataSourceCollector();
 						ret.setMethod(method);
 						ret.setDescription(tmpReportDescriptionForCollectingData);
 						ret.setForInvocationOfMethod(forInvocationOfMethod);
 						ret.setPrmVal(threadPrmVal);
-						
+
 						return ret;
 					} else {
-						method = mf.getMethodWithNameAndParameters(mainClass, methodName, paramTypes);						
+						method = mf.getMethodWithNameAndParameters(mainClass, methodName, paramTypes);
 					}
-					
+
 					try {
 						this.dataSource = (JRDataSource) method.invoke(forInvocationOfMethod, prmVal);
 					}
@@ -589,7 +590,7 @@ public class ReportGenerator extends Block {
 	}
 
 	private GroupBusiness getGroupBusiness() throws RemoteException {
-		return (GroupBusiness) IBOLookup.getServiceInstance(
+		return IBOLookup.getServiceInstance(
 					this.getIWApplicationContext(), GroupBusiness.class);
 	}
 
@@ -607,8 +608,7 @@ public class ReportGenerator extends Block {
 		try {
 			if (!isCurrentUserSuperAdmin) {
 				if (group.getAlias() != null) {// thats the real group
-					hasOwnerPermissionForRealGroup = accessController.isOwner(
-							group.getAlias(), iwc);
+					hasOwnerPermissionForRealGroup = accessController.isOwnerLegacy(group.getAlias(), iwc);
 					if (!hasOwnerPermissionForRealGroup) {
 						hasViewPermissionForRealGroup = accessController
 								.hasViewPermissionFor(group.getAlias(),
@@ -630,8 +630,7 @@ public class ReportGenerator extends Block {
 						hasPermitPermissionForRealGroup = true;
 					}
 				} else if (group != null) {
-					hasOwnerPermissionForRealGroup = accessController.isOwner(
-							group, iwc);
+					hasOwnerPermissionForRealGroup = accessController.isOwnerLegacy(group, iwc);
 					if (!hasOwnerPermissionForRealGroup) {
 						hasViewPermissionForRealGroup = accessController
 								.hasViewPermissionFor(group,
@@ -661,7 +660,7 @@ public class ReportGenerator extends Block {
 		return hasViewPermissionForRealGroup || hasPermitPermissionForRealGroup;
 	}
 
-	
+
 	private void generateReport() throws RemoteException, JRException {
 		JasperReportBusiness business = getReportBusiness();
 		if (this.dataSource != null) {
@@ -709,7 +708,7 @@ public class ReportGenerator extends Block {
 
 	public JasperReportBusiness getReportBusiness() {
 		try {
-			return (JasperReportBusiness) IBOLookup.getServiceInstance(getIWApplicationContext(), JasperReportBusiness.class);
+			return IBOLookup.getServiceInstance(getIWApplicationContext(), JasperReportBusiness.class);
 		}
 		catch (RemoteException ex) {
 			System.err.println("[ReportLayoutChooser]: Can't retrieve JasperReportBusiness. Message is: " + ex.getMessage());
@@ -763,9 +762,10 @@ public class ReportGenerator extends Block {
 		this.layoutICFilePK = layoutICFilePK;
 	}
 
+	@Override
 	public void main(IWContext iwc) throws Exception {
 		ReportGeneratorThread thread = new ReportGeneratorThread();
-		
+
 		IWResourceBundle iwrb = getResourceBundle(iwc);
 		if (!iwc.isParameterSet(this.PRM_REPORT_NAME) && this.reportName.equals(DEFAULT_REPORT_NAME)) {
 			this.reportName = iwrb.getLocalizedString(this.PRM_REPORT_NAME, DEFAULT_REPORT_NAME);
@@ -801,18 +801,18 @@ public class ReportGenerator extends Block {
 					this.add(submForm);
 				}
 				else {
-					if (this.runAsThread) {	
+					if (this.runAsThread) {
 						if (this.getEmail() == null || "".equals(getEmail().trim())) {
-							this.add(iwrb.getLocalizedString("report_generator.cant_run_thread","This report can't be executed for users without email."));	
+							this.add(iwrb.getLocalizedString("report_generator.cant_run_thread","This report can't be executed for users without email."));
 							return;
 						}
-						
+
 						parseMethodInvocationXML(iwc, iwrb);
 						ThreadRunDataSourceCollector collector = generateDataSource(iwc);
-						
+
 						String tmpReportName = iwc
 								.getParameter(getParameterName(this.PRM_REPORT_NAME));
-						
+
 						thread.setDataSource(this.dataSource);
 						thread.setGenerateExcelReport(this.generateExcelReport);
 						thread.setGenerateXMLReport(this.generateXMLReport);
@@ -833,7 +833,7 @@ public class ReportGenerator extends Block {
 						thread.setLayoutIWBundle(this.layoutIWBundle);
 						thread.setIWApplicationContext(iwc.getApplicationContext());
 						thread.setDynamicFields(this.dynamicFields);
-						
+
 						thread.start();
 
 						this.add(iwrb.getLocalizedString("report_generator.running_as_thread","This report is now running in the background. The result will be sent to you on the supplied email when it's done. Please don't re-run the report."));
@@ -892,7 +892,7 @@ public class ReportGenerator extends Block {
 	}
 
 	/**
-	 * 
+	 *
 	 */
 	private void parseMethodInvocationXML(IWContext iwc, IWResourceBundle iwrb) throws IDOLookupException, ReportGeneratorException {
 		MethodInvocationXMLFile file = null;
@@ -970,7 +970,7 @@ public class ReportGenerator extends Block {
 				link.setTarget(Link.TARGET_NEW_WINDOW);
 				// DownloadLink link = new DownloadLink(_reportName);
 				// link.setRelativeFilePath(relativeFilePath);
-				//				
+				//
 				reports.add(formatNames[i] + " : ", 1, j);
 				reports.add(link, 2, j);
 			}
@@ -979,7 +979,7 @@ public class ReportGenerator extends Block {
 	}
 
 	/**
-	 * 
+	 *
 	 */
 	private void lineUpElements(IWResourceBundle iwrb, IWContext iwc) {
 		// IWMainApplication iwma = iwc.getApplicationContext().getIWMainApplication();
@@ -1173,6 +1173,7 @@ public class ReportGenerator extends Block {
 		obj.setMarkupAttribute("style", STYLE_2);
 	}
 
+	@Override
 	public synchronized Object clone() {
 		ReportGenerator clone = (ReportGenerator) super.clone();
 
@@ -1193,7 +1194,7 @@ public class ReportGenerator extends Block {
 			this.reportName = name;
 		}
 	}
-	
+
 	public void setGenerateExcelReport(boolean value) {
 		this.generateExcelReport = value;
 	}
@@ -1214,11 +1215,11 @@ public class ReportGenerator extends Block {
 		this.generateSimpleExcelReport = value;
 	}
 
-	
+
 	public void setRunAsThread(boolean value) {
 		this.runAsThread = value;
 	}
-	
+
 	public String getEmail() {
 		return email;
 	}
@@ -1234,7 +1235,7 @@ public class ReportGenerator extends Block {
 
 		private String _localizedMessage = null;
 
-		//		
+		//
 		// private String _localizedKey = null;
 		// private String _defaultUserFriendlyMessage = null;
 
@@ -1257,6 +1258,7 @@ public class ReportGenerator extends Block {
 		}
 
 		// jdk 1.3 - 1.4 fix
+		@Override
 		public Throwable getCause() {
 			return this._cause;
 		}
@@ -1264,11 +1266,12 @@ public class ReportGenerator extends Block {
 		// public String getLocalizedMessageKey(){
 		// return _localizedKey;
 		// }
-		//		
+		//
 		// public String getDefaultLocalizedMessage(){
 		// return _defaultUserFriendlyMessage;
 		// }
 
+		@Override
 		public String getLocalizedMessage() {
 			return this._localizedMessage;
 		}
