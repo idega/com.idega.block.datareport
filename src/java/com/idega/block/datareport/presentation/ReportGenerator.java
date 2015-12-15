@@ -5,6 +5,7 @@
  */
 package com.idega.block.datareport.presentation;
 
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -25,7 +26,7 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Vector;
+import java.util.logging.Level;
 
 import javax.ejb.FinderException;
 
@@ -61,6 +62,7 @@ import com.idega.core.file.data.ICFile;
 import com.idega.data.IDOLookup;
 import com.idega.data.IDOLookupException;
 import com.idega.idegaweb.IWBundle;
+import com.idega.idegaweb.IWMainApplication;
 import com.idega.idegaweb.IWResourceBundle;
 import com.idega.presentation.Block;
 import com.idega.presentation.IWContext;
@@ -74,6 +76,7 @@ import com.idega.presentation.ui.HiddenInput;
 import com.idega.presentation.ui.InterfaceObject;
 import com.idega.presentation.ui.SubmitButton;
 import com.idega.presentation.ui.TextInput;
+import com.idega.servlet.filter.IWBundleResourceFilter;
 import com.idega.user.business.GroupBusiness;
 import com.idega.user.data.Group;
 import com.idega.user.data.User;
@@ -113,15 +116,15 @@ public class ReportGenerator extends Block {
 	private IWBundle methodInvocationIWBundle = null;
 
 	private MethodInvocationDocument methodInvokeDoc = null;
-	private Vector dynamicFields = new Vector();
-	private Map reportFilePathsMap = null;
+	private List dynamicFields = new ArrayList();
+	private Map<String, String> reportFilePathsMap = new HashMap<String, String>();
 	private QueryHelper queryParser = null;
 	private JRDataSource dataSource = null;
 	private Table fieldTable = null;
 	private JasperDesign design = null;
 	private ReportDescription reportDescription = null;// new ReportDescription();
 
-	private List maintainParameterList = new Vector();
+	private List maintainParameterList = new ArrayList();
 
 	private final static String prmLablePrefix = "label_";
 
@@ -383,16 +386,17 @@ public class ReportGenerator extends Block {
 	private ThreadRunDataSourceCollector generateDataSource(IWContext iwc) throws XMLException, Exception {
 		Locale currentLocale = iwc.getCurrentLocale();
 		if (this.queryPK != null) {
+			getLogger().info("Creating data source from query: " + queryPK);
 			QueryService service = (IBOLookup.getServiceInstance(iwc, QueryService.class));
 			this.dataSource = service.generateQueryResult(this.queryPK, iwc);
 		}
 		else if (this.methodInvokeDoc != null) {
 			ReportDescription tmpReportDescriptionForCollectingData = new ReportDescription();
-			List mDescs = this.methodInvokeDoc.getMethodDescriptions();
+			List<MethodDescription> mDescs = this.methodInvokeDoc.getMethodDescriptions();
 			if (mDescs != null) {
-				Iterator it = mDescs.iterator();
+				Iterator<MethodDescription> it = mDescs.iterator();
 				if (it.hasNext()) {
-					MethodDescription mDesc = (MethodDescription) it.next();
+					MethodDescription mDesc = it.next();
 
 					ClassDescription mainClassDesc = mDesc.getClassDescription();
 					Class mainClass = mainClassDesc.getClassObject();
@@ -400,22 +404,22 @@ public class ReportGenerator extends Block {
 					String methodName = mDesc.getName();
 
 					MethodInput input = mDesc.getInput();
-					List parameters = null;
+					List<ClassDescription> parameters = null;
 					if (input != null) {
 						parameters = input.getClassDescriptions();
 					}
 
 					Object[] prmVal = null;
-					Class[] paramTypes = null;
+					Class<?>[] paramTypes = null;
 
 					if (parameters != null) {
 						prmVal = new Object[parameters.size()];
 						paramTypes = new Class[parameters.size()];
-						ListIterator iterator = parameters.listIterator();
+						ListIterator<ClassDescription> iterator = parameters.listIterator();
 						while (iterator.hasNext()) {
 							int index = iterator.nextIndex();
-							ClassDescription clDesc = (ClassDescription) iterator.next();
-							Class prmClassType = clDesc.getClassObject();
+							ClassDescription clDesc = iterator.next();
+							Class<?> prmClassType = clDesc.getClassObject();
 							paramTypes[index] = prmClassType;
 							String[] prmValues = iwc.getParameterValues(getParameterName(clDesc.getName()));
 							String prm = null;
@@ -662,40 +666,60 @@ public class ReportGenerator extends Block {
 
 
 	private void generateReport() throws RemoteException, JRException {
+		if (this.dataSource == null) {
+			getLogger().warning("Datasource is not provided!");
+			return;
+		}
+
 		JasperReportBusiness business = getReportBusiness();
-		if (this.dataSource != null) {
-			if (doGenerateSomeJasperReport() && (this.dataSource != null && this.design != null)) {
-				this.reportDescription.put(DynamicReportDesign.PRM_REPORT_NAME, this.reportName);
-				JasperPrint print = business.getReport(this.dataSource, this.reportDescription.getDisplayValueMap(), this.design);
+		if (doGenerateSomeJasperReport() && (this.dataSource != null && this.design != null)) {
+			getLogger().info("Using datasource " + dataSource + " and design: " + design);
+			this.reportDescription.put(DynamicReportDesign.PRM_REPORT_NAME, this.reportName);
+			JasperPrint print = business.getReport(this.dataSource, this.reportDescription.getDisplayValueMap(), this.design);
+			getLogger().info("Got print: " + print);
 
-				if (this.reportFilePathsMap == null) {
-					this.reportFilePathsMap = new HashMap();
-				}
-
-				if (this.generatePDFReport) {
-					this.reportFilePathsMap.put(PDF_FORMAT, business.getPdfReport(print, "report"));
-				}
-
-				if (this.generateExcelReport) {
-					this.reportFilePathsMap.put(EXCEL_FORMAT, business.getExcelReport(print, "report"));
-				}
-
-				if (this.generateHTMLReport) {
-					this.reportFilePathsMap.put(HTML_FORMAT, business.getHtmlReport(print, "report"));
-				}
-
-				if (this.generateXMLReport) {
-					this.reportFilePathsMap.put(XML_FORMAT, business.getXmlReport(print, "report"));
-				}
-
+			if (this.reportFilePathsMap == null) {
+				this.reportFilePathsMap = new HashMap<String, String>();
 			}
 
-			if (this.generateSimpleExcelReport && (this.dataSource instanceof ReportableCollection)) {
-				if (this.reportFilePathsMap == null) {
-					this.reportFilePathsMap = new HashMap();
-				}
-				this.reportFilePathsMap.put(SIMPLE_EXCEL_FORMAT, business.getSimpleExcelReport(((ReportableCollection) this.dataSource).getJRDataSource(), this.reportName, this.reportDescription));
+			if (this.generateHTMLReport) {
+				getLogger().info("Fetching HTML report for " + reportName + " from print " + print);
+				String html = business.getHtmlReport(print, "report");
+				getLogger().info("HTML report (" + reportName + "): " + html);
+				this.reportFilePathsMap.put(HTML_FORMAT, html);
 			}
+
+			if (this.generatePDFReport) {
+				getLogger().info("Fetching PDF report for " + reportName + " from print " + print);
+				String pdf = business.getPdfReport(print, "report");
+				getLogger().info("PDF report (" + reportName + "): " + pdf);
+				this.reportFilePathsMap.put(PDF_FORMAT, pdf);
+			}
+
+			if (this.generateXMLReport) {
+				getLogger().info("Fetching XML report for " + reportName + " from print " + print);
+				String xml = business.getXmlReport(print, "report");
+				getLogger().info("XML report (" + reportName + "): " + xml);
+				this.reportFilePathsMap.put(XML_FORMAT, xml);
+			}
+
+			if (this.generateExcelReport &&
+					(IWMainApplication.getDefaultIWMainApplication().getSettings().getBoolean("data_report.always_generate_excel", false) ||
+					!(this.generateSimpleExcelReport && (this.dataSource instanceof ReportableCollection)))
+			) {
+				getLogger().info("Fetching Excel report for " + reportName + " from print " + print);
+				String excel = business.getExcelReport(print, "report");
+				getLogger().info("Excel report (" + reportName + "): " + excel);
+				this.reportFilePathsMap.put(EXCEL_FORMAT, excel);
+			}
+		}
+
+		if (this.generateSimpleExcelReport && (this.dataSource instanceof ReportableCollection)) {
+			getLogger().info("Using simple Excel format");
+			if (this.reportFilePathsMap == null) {
+				this.reportFilePathsMap = new HashMap<String, String>();
+			}
+			this.reportFilePathsMap.put(SIMPLE_EXCEL_FORMAT, business.getSimpleExcelReport(((ReportableCollection) this.dataSource).getJRDataSource(), this.reportName, this.reportDescription));
 		}
 	}
 
@@ -767,8 +791,8 @@ public class ReportGenerator extends Block {
 		ReportGeneratorThread thread = new ReportGeneratorThread();
 
 		IWResourceBundle iwrb = getResourceBundle(iwc);
-		if (!iwc.isParameterSet(this.PRM_REPORT_NAME) && this.reportName.equals(DEFAULT_REPORT_NAME)) {
-			this.reportName = iwrb.getLocalizedString(this.PRM_REPORT_NAME, DEFAULT_REPORT_NAME);
+		if (!iwc.isParameterSet(PRM_REPORT_NAME) && this.reportName.equals(DEFAULT_REPORT_NAME)) {
+			this.reportName = iwrb.getLocalizedString(PRM_REPORT_NAME, DEFAULT_REPORT_NAME);
 		}
 
 		try {
@@ -783,10 +807,26 @@ public class ReportGenerator extends Block {
 					this.add(submForm);
 				}
 				else {
+					getLogger().info("Parsing query: start");
 					parseQuery(iwc);
-					generateDataSource(iwc);
+					getLogger().info("Parsing query: done");
+
+					getLogger().info("Generating data source: start");
+					ThreadRunDataSourceCollector dataSoruce = generateDataSource(iwc);
+					getLogger().info("Generated data source: " + dataSoruce);
+
+					getLogger().info("Generating layout: start");
 					getLayoutFromICFileOrGenerate(iwc);
-					generateReport();
+					getLogger().info("Generating layout: done");
+
+					try {
+						getLogger().info("Generating report: start");
+						generateReport();
+						getLogger().info("Generating report: done");
+					} catch (Exception e) {
+						getLogger().log(Level.WARNING, "Error generating report: " + reportName, e);
+					}
+
 					this.add(getReportLink(iwc));
 				}
 			}
@@ -810,8 +850,7 @@ public class ReportGenerator extends Block {
 						parseMethodInvocationXML(iwc, iwrb);
 						ThreadRunDataSourceCollector collector = generateDataSource(iwc);
 
-						String tmpReportName = iwc
-								.getParameter(getParameterName(this.PRM_REPORT_NAME));
+						String tmpReportName = iwc.getParameter(getParameterName(this.PRM_REPORT_NAME));
 
 						thread.setDataSource(this.dataSource);
 						thread.setGenerateExcelReport(this.generateExcelReport);
@@ -838,20 +877,32 @@ public class ReportGenerator extends Block {
 
 						this.add(iwrb.getLocalizedString("report_generator.running_as_thread","This report is now running in the background. The result will be sent to you on the supplied email when it's done. Please don't re-run the report."));
 					} else {
+						getLogger().info("2 Parsing method invocation XML: start");
 						parseMethodInvocationXML(iwc, iwrb);
-						generateDataSource(iwc);
+						getLogger().info("2 Parsing method invocation XML: done");
+
+						getLogger().info("2 Generating data source: start");
+						ThreadRunDataSourceCollector dataSoruce = generateDataSource(iwc);
+						getLogger().info("2 Generated data source: " + dataSoruce);
+
 						if (doGenerateSomeJasperReport()) {
+							getLogger().info("2 Getting layout: start");
 							getLayoutFromICFileOrGenerate(iwc);
-						}
-						else {
+							getLogger().info("2 Getting layout: done");
+						} else {
+							getLogger().info("2 Preparing layout: start");
 							prepareForLayoutGeneration(iwc, true);
+							getLogger().info("2 Preparing layout: done");
 						}
 						try {
+							getLogger().info("2 Generating report: start");
 							generateReport();
+							getLogger().info("2 Generating report: done");
+
 							this.add(getReportLink(iwc));
-						} catch (JRException e) {
+						} catch (Exception e) {
 							this.add(iwrb.getLocalizedString("report_generator.error_generating_report","Error generating report"));
-							e.printStackTrace();
+							getLogger().log(Level.WARNING, "Error generating report: " + reportName, e);
 						}
 					}
 
@@ -860,7 +911,6 @@ public class ReportGenerator extends Block {
 			else if (hasEditPermission()) {
 				add(iwrb.getLocalizedString("no_query_has_been_chosen_for_this_instance", "No query has been chosen for this instance"));
 			} // else{//Do nothing}
-
 		}
 		catch (OutOfMemoryError e) {
 			add(iwrb.getLocalizedString("datareport.out_of_memory", "The server was not able to finish your request. Try to be more specific in your request or partition it so the result will be smaller."));
@@ -871,6 +921,7 @@ public class ReportGenerator extends Block {
 			add(back);
 			e.printStackTrace();
 
+			getLogger().log(Level.WARNING, "Error generating report: " + reportName, e);
 		}
 		catch (ReportGeneratorException e) {
 			add(e.getLocalizedMessage());
@@ -888,6 +939,10 @@ public class ReportGenerator extends Block {
 			else {
 				e.printStackTrace();
 			}
+
+			getLogger().log(Level.WARNING, "Error generating report: " + reportName, e);
+		} catch (Exception e) {
+			getLogger().log(Level.WARNING, "Error generating report: " + reportName, e);
 		}
 	}
 
@@ -914,13 +969,21 @@ public class ReportGenerator extends Block {
 				this.methodInvocationIWBundle = getBundle(iwc);
 			}
 
+			String realPath = this.methodInvocationIWBundle.getRealPathWithFileNameString(this.methodInvocationFileName);
 			try {
-				fileStream = new FileInputStream(this.methodInvocationIWBundle.getRealPathWithFileNameString(this.methodInvocationFileName));
-			}
-			catch (FileNotFoundException e) {
+				fileStream = new FileInputStream(realPath);
+			} catch (FileNotFoundException e) {
 				e.printStackTrace();
 			}
-
+			if (fileStream == null) {
+				String uri = realPath.substring(realPath.indexOf("/idegaweb/bundles/"));
+				try {
+					File tmpFile = IWBundleResourceFilter.copyResourceFromJarToWebapp(iwc.getIWMainApplication(), uri);
+					fileStream = new FileInputStream(tmpFile);
+				} catch (Exception e) {
+					getLogger().log(Level.WARNING, "Error getting stream for " + this.methodInvocationFileName + " in " + this.methodInvocationIWBundle + " using request: " + uri, e);
+				}
+			}
 		}
 
 		if (fileStream != null) {
@@ -933,11 +996,11 @@ public class ReportGenerator extends Block {
 		}
 
 		if (this.methodInvokeDoc != null) {
-			List methods = this.methodInvokeDoc.getMethodDescriptions();
+			List<MethodDescription> methods = this.methodInvokeDoc.getMethodDescriptions();
 			if (methods != null) {
-				Iterator iter = methods.iterator();
+				Iterator<MethodDescription> iter = methods.iterator();
 				if (iter.hasNext()) {
-					MethodDescription mDesc = (MethodDescription) iter.next();
+					MethodDescription mDesc = iter.next();
 
 					MethodInput mInput = mDesc.getInput();
 					if (mInput != null) {
@@ -963,7 +1026,7 @@ public class ReportGenerator extends Block {
 
 		int j = 1;
 		for (int i = 0; i < formats.length; i++) {
-			String relativeFilePath = (String) this.reportFilePathsMap.get(formats[i]);
+			String relativeFilePath = this.reportFilePathsMap.get(formats[i]);
 			if (relativeFilePath != null) {
 				j++;
 				Link link = new Link(this.reportName, relativeFilePath);
@@ -1177,7 +1240,7 @@ public class ReportGenerator extends Block {
 	public synchronized Object clone() {
 		ReportGenerator clone = (ReportGenerator) super.clone();
 
-		clone.dynamicFields = new Vector();
+		clone.dynamicFields = new ArrayList();
 		clone.dataSource = null;
 		clone.design = null;
 		clone.reportFilePathsMap = null;

@@ -4,10 +4,12 @@ import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.rmi.RemoteException;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
-import java.util.Vector;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import net.sf.jasperreports.engine.JRDataSource;
 import net.sf.jasperreports.engine.JRException;
@@ -33,6 +35,8 @@ import com.idega.xml.XMLException;
 
 public class ReportGeneratorThread extends Thread {
 
+	private static final Logger LOGGER = Logger.getLogger(ReportGeneratorThread.class.getName());
+
 	private static final String IW_BUNDLE_IDENTIFIER = "com.idega.block.datareport";
 	private final static String prmLablePrefix = "label_";
 
@@ -57,7 +61,7 @@ public class ReportGeneratorThread extends Thread {
 
 	private ThreadRunDataSourceCollector collector;
 
-	private Vector dynamicFields = new Vector();
+	private List<ClassDescription> dynamicFields = new ArrayList<ClassDescription>();
 
 	private String layoutFileName = null;
 	private Integer layoutICFilePK = null;
@@ -75,12 +79,14 @@ public class ReportGeneratorThread extends Thread {
 		timer.start();
 	}
 
+	@Override
 	public void interrupt() {
 		super.interrupt();
 	}
 
+	@Override
 	public void run() {
-		System.out.println("Starting ReportGeneratorThread");
+		LOGGER.info("Starting ReportGeneratorThread");
 		super.run();
 
 		try {
@@ -94,7 +100,7 @@ public class ReportGeneratorThread extends Thread {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-		System.out.println("ReportGeneratorThread done");
+		LOGGER.info("ReportGeneratorThread done");
 	}
 
 	private void prepareForLayoutGeneration(boolean isMethodInvocation)
@@ -106,19 +112,15 @@ public class ReportGeneratorThread extends Thread {
 
 		if (this.getDynamicFields() != null
 				&& this.getDynamicFields().size() > 0) {
-			Iterator iter = this.getDynamicFields().iterator();
+			Iterator<ClassDescription> iter = this.getDynamicFields().iterator();
 			while (iter.hasNext()) {
-				ClassDescription element = (ClassDescription) iter.next();
+				ClassDescription element = iter.next();
 				String prmName = element.getName();
-				String tmpPrmLabel = (String) this.reportDescription
-						.get(ReportGeneratorThread.prmLablePrefix + prmName);
-				String tmpPrmValue = (String) this.reportDescription
-						.get(prmName);
+				String tmpPrmLabel = (String) this.reportDescription.get(ReportGeneratorThread.prmLablePrefix + prmName);
+				String tmpPrmValue = (String) this.reportDescription.get(prmName);
 				if (tmpPrmLabel != null && tmpPrmValue != null) {
-					int tmpPrmLabelWidth = (tmpPrmLabel != null) ? calculateTextFieldWidthForString(tmpPrmLabel)
-							: prmLableWidth;
-					int tmpPrmValueWidth = (tmpPrmValue != null) ? calculateTextFieldWidthForString(tmpPrmValue)
-							: prmValueWidth;
+					int tmpPrmLabelWidth = (tmpPrmLabel != null) ? calculateTextFieldWidthForString(tmpPrmLabel) : prmLableWidth;
+					int tmpPrmValueWidth = (tmpPrmValue != null) ? calculateTextFieldWidthForString(tmpPrmValue) : prmValueWidth;
 					this.reportDescription.addHeaderParameter(
 							ReportGeneratorThread.prmLablePrefix + prmName,
 							tmpPrmLabelWidth, prmName, String.class,
@@ -172,23 +174,22 @@ public class ReportGeneratorThread extends Thread {
 		DynamicReportDesign designTemplate = new DynamicReportDesign(
 				"GeneratedReport");
 
-		List keys = this.reportDescription.getListOfHeaderParameterKeys();
-		List labels = this.reportDescription
-				.getListOfHeaderParameterLabelKeys();
-		Iterator keyIter = keys.iterator();
-		Iterator labelIter = labels.iterator();
+		List<String> keys = this.reportDescription.getListOfHeaderParameterKeys();
+		List<String> labels = this.reportDescription.getListOfHeaderParameterLabelKeys();
+		Iterator<String> keyIter = keys.iterator();
+		Iterator<String> labelIter = labels.iterator();
 		while (keyIter.hasNext() && labelIter.hasNext()) {
-			String key = (String) keyIter.next();
-			String label = (String) labelIter.next();
+			String key = keyIter.next();
+			String label = labelIter.next();
 			designTemplate.addHeaderParameter(label,
 					this.reportDescription.getWithOfParameterOrLabel(label),
 					key, this.reportDescription.getParameterClassType(key),
 					this.reportDescription.getWithOfParameterOrLabel(key));
 		}
 
-		List allFields = this.reportDescription.getListOfFields();
+		List<?> allFields = this.reportDescription.getListOfFields();
 		if (allFields != null && allFields.size() > 0) {
-			// //System.out.println("ReportGenerator.");
+			// //LOGGER.info("ReportGenerator.");
 			// TODO thi: solve problem with the width of columns avoiding
 			// merging of vertical cells in excel outputs
 			// stretch with overflow merges two vertical cells, excel file can't
@@ -220,7 +221,7 @@ public class ReportGeneratorThread extends Thread {
 			// designTemplate.setPageWidth(columnsWidth + 20 + 20);
 			designTemplate.setColumnWidth(columnsWidth);
 			//
-			Iterator iter = allFields.iterator();
+			Iterator<?> iter = allFields.iterator();
 			if (isMethodInvocation) {
 				while (iter.hasNext()) {
 					ReportableField field = (ReportableField) iter.next();
@@ -279,14 +280,13 @@ public class ReportGeneratorThread extends Thread {
 				mailServer = messagingSetting.getSMTPMailServer();
 				fromAddress = messagingSetting.getFromMailAddress();
 			} catch (Exception e) {
-				System.err
-						.println("MessageBusinessBean: Error getting mail property from bundle");
+				LOGGER.log(Level.WARNING, "MessageBusinessBean: Error getting mail property from bundle");
 				e.printStackTrace();
 			}
 
 			timer.stop();
 			String body = "Execution time : " + timer.getTimeString();
-			
+
 			if (doGenerateSomeJasperReport()
 					&& (this.dataSource != null && this.design != null)) {
 				this.reportDescription.put(DynamicReportDesign.PRM_REPORT_NAME,
@@ -300,7 +300,7 @@ public class ReportGeneratorThread extends Thread {
 
 					fileName = this.iwac.getIWMainApplication().getRealPath(
 							fileName);
-					System.out.println("generating pdf file : " + fileName);
+					LOGGER.info("generating pdf file : " + fileName);
 
 					File file = new File(fileName);
 
@@ -308,17 +308,15 @@ public class ReportGeneratorThread extends Thread {
 						com.idega.util.SendMail.send(fromAddress, email.trim(),
 								null, "", mailServer, "PDF", body, file);
 					} catch (javax.mail.MessagingException me) {
-						System.err
-								.println("MessagingException when sending mail to address: "
+						LOGGER.log(Level.WARNING, "MessagingException when sending mail to address: "
 										+ email
 										+ " Message was: "
-										+ me.getMessage());
+										+ me.getMessage(), me);
 					} catch (Exception e) {
-						System.err
-								.println("Exception when sending mail to address: "
+						LOGGER.log(Level.WARNING, "Exception when sending mail to address: "
 										+ email
 										+ " Message was: "
-										+ e.getMessage());
+										+ e.getMessage(), e);
 					}
 				}
 
@@ -326,7 +324,7 @@ public class ReportGeneratorThread extends Thread {
 					String fileName = business.getExcelReport(print, "report");
 					fileName = this.iwac.getIWMainApplication().getRealPath(
 							fileName);
-					System.out.println("generating excel file : " + fileName);
+					LOGGER.info("generating excel file : " + fileName);
 
 					File file = new File(fileName);
 
@@ -334,17 +332,15 @@ public class ReportGeneratorThread extends Thread {
 						com.idega.util.SendMail.send(fromAddress, email.trim(),
 								null, "", mailServer, "Excel", body, file);
 					} catch (javax.mail.MessagingException me) {
-						System.err
-								.println("MessagingException when sending mail to address: "
+						LOGGER.log(Level.WARNING, "MessagingException when sending mail to address: "
 										+ email
 										+ " Message was: "
-										+ me.getMessage());
+										+ me.getMessage(), me);
 					} catch (Exception e) {
-						System.err
-								.println("Exception when sending mail to address: "
+						LOGGER.log(Level.WARNING, "Exception when sending mail to address: "
 										+ email
 										+ " Message was: "
-										+ e.getMessage());
+										+ e.getMessage(), e);
 					}
 				}
 
@@ -352,7 +348,7 @@ public class ReportGeneratorThread extends Thread {
 					String fileName = business.getHtmlReport(print, "report");
 					fileName = this.iwac.getIWMainApplication().getRealPath(
 							fileName);
-					System.out.println("generating html file : " + fileName);
+					LOGGER.info("generating html file : " + fileName);
 
 					File file = new File(fileName);
 
@@ -360,17 +356,15 @@ public class ReportGeneratorThread extends Thread {
 						com.idega.util.SendMail.send(fromAddress, email.trim(),
 								null, "", mailServer, "HTML", body, file);
 					} catch (javax.mail.MessagingException me) {
-						System.err
-								.println("MessagingException when sending mail to address: "
+						LOGGER.log(Level.WARNING, "MessagingException when sending mail to address: "
 										+ email
 										+ " Message was: "
-										+ me.getMessage());
+										+ me.getMessage(), me);
 					} catch (Exception e) {
-						System.err
-								.println("Exception when sending mail to address: "
+						LOGGER.log(Level.WARNING, "Exception when sending mail to address: "
 										+ email
 										+ " Message was: "
-										+ e.getMessage());
+										+ e.getMessage(), e);
 					}
 				}
 
@@ -378,7 +372,7 @@ public class ReportGeneratorThread extends Thread {
 					String fileName = business.getXmlReport(print, "report");
 					fileName = this.iwac.getIWMainApplication().getRealPath(
 							fileName);
-					System.out.println("generating xml file : " + fileName);
+					LOGGER.info("generating xml file : " + fileName);
 
 					File file = new File(fileName);
 
@@ -386,17 +380,15 @@ public class ReportGeneratorThread extends Thread {
 						com.idega.util.SendMail.send(fromAddress, email.trim(),
 								null, "", mailServer, "XML", body, file);
 					} catch (javax.mail.MessagingException me) {
-						System.err
-								.println("MessagingException when sending mail to address: "
+						LOGGER.log(Level.WARNING, "MessagingException when sending mail to address: "
 										+ email
 										+ " Message was: "
-										+ me.getMessage());
+										+ me.getMessage(), me);
 					} catch (Exception e) {
-						System.err
-								.println("Exception when sending mail to address: "
+						LOGGER.log(Level.WARNING, "Exception when sending mail to address: "
 										+ email
 										+ " Message was: "
-										+ e.getMessage());
+										+ e.getMessage(), e);
 					}
 				}
 			}
@@ -418,15 +410,13 @@ public class ReportGeneratorThread extends Thread {
 					com.idega.util.SendMail.send(fromAddress, email.trim(),
 							null, "", mailServer, "Excel no stylesheet", body, file);
 				} catch (javax.mail.MessagingException me) {
-					System.err
-							.println("MessagingException when sending mail to address: "
+					LOGGER.log(Level.WARNING, "MessagingException when sending mail to address: "
 									+ email
 									+ " Message was: "
-									+ me.getMessage());
+									+ me.getMessage(), me);
 				} catch (Exception e) {
-					System.err
-							.println("Exception when sending mail to address: "
-									+ email + " Message was: " + e.getMessage());
+					LOGGER.log(Level.WARNING, "Exception when sending mail to address: "
+									+ email + " Message was: " + e.getMessage(), e);
 				}
 			}
 		}
@@ -434,12 +424,11 @@ public class ReportGeneratorThread extends Thread {
 
 	public JasperReportBusiness getReportBusiness() {
 		try {
-			return (JasperReportBusiness) IBOLookup.getServiceInstance(
+			return IBOLookup.getServiceInstance(
 					IWMainApplication.getDefaultIWApplicationContext(),
 					JasperReportBusiness.class);
 		} catch (RemoteException ex) {
-			System.err
-					.println("[ReportLayoutChooser]: Can't retrieve JasperReportBusiness. Message is: "
+			LOGGER.log(Level.WARNING, "[ReportLayoutChooser]: Can't retrieve JasperReportBusiness. Message is: "
 							+ ex.getMessage());
 			throw new RuntimeException(
 					"[ReportLayoutChooser]: Can't retrieve ReportBusiness");
@@ -629,11 +618,11 @@ public class ReportGeneratorThread extends Thread {
 		this.iwac = iwac;
 	}
 
-	public Vector getDynamicFields() {
+	public List<ClassDescription> getDynamicFields() {
 		return dynamicFields;
 	}
 
-	public void setDynamicFields(Vector dynamicFields) {
+	public void setDynamicFields(List<ClassDescription> dynamicFields) {
 		this.dynamicFields = dynamicFields;
 	}
 }

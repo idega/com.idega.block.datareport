@@ -23,8 +23,10 @@ import com.idega.xml.XMLException;
  */
 public class MethodInput extends XMLElement {
 
+	private static final long serialVersionUID = 7516449381268714742L;
+
 	static final String NAME = "input";
-	private List _parameterClasses = new ArrayList();
+	private List<ClassDescription> _parameterClasses = new ArrayList<ClassDescription>();
 
 	/**
 	 * @param name
@@ -32,7 +34,7 @@ public class MethodInput extends XMLElement {
 	public MethodInput() {
 		super(NAME);
 	}
-	
+
 	/**
 	 * @param element
 	 */
@@ -42,21 +44,21 @@ public class MethodInput extends XMLElement {
 	}
 
 	private void initialize(XMLElement element) throws XMLException {
-		List methodDescriptions = element.getChildren(ClassDescription.NAME);
-		Iterator iter = methodDescriptions.iterator();
+		List<XMLElement> methodDescriptions = element.getChildren(ClassDescription.NAME);
+		Iterator<XMLElement> iter = methodDescriptions.iterator();
 		if(iter != null){
 			while (iter.hasNext()) {
-				XMLElement localizedName = (XMLElement)iter.next();
+				XMLElement localizedName = iter.next();
 				this._parameterClasses.add(new ClassDescription(localizedName));
 			}
 		}
 	}
-	
+
 	public void close(){
-		
+
 	}
-	
-	public List getClassDescriptions(){
+
+	public List<ClassDescription> getClassDescriptions(){
 		return this._parameterClasses;
 	}
 

@@ -21,25 +21,29 @@ import com.idega.data.IDOReportableField;
  * @version		1.0
  */
 public class ReportableData implements IDOReportableEntity{
-	
+
 	Map _data = new HashMap();
-	
+
 	/**
-	 * 
+	 *
 	 */
 	public ReportableData() {
 		super();
 	}
-	
-	
+
+
 	public void addData(IDOReportableField key, Object data){
 		this._data.put(key.getName(),data);
 	}
 
+	@Override
 	public Object getFieldValue(IDOReportableField arg0) {
 		return this._data.get(arg0.getName());
 	}
-	
-	
+
+	@Override
+	public String toString() {
+		return "Data: " + _data;
+	}
 
 }

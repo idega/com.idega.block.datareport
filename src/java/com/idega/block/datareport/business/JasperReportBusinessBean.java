@@ -14,8 +14,11 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Level;
+
 import javax.ejb.CreateException;
 import javax.ejb.RemoveException;
+
 import net.sf.jasperreports.engine.JRBand;
 import net.sf.jasperreports.engine.JRDataSource;
 import net.sf.jasperreports.engine.JRException;
@@ -30,6 +33,7 @@ import net.sf.jasperreports.engine.design.JasperDesign;
 import net.sf.jasperreports.engine.export.JRHtmlExporter;
 import net.sf.jasperreports.engine.export.JRXlsExporter;
 import net.sf.jasperreports.engine.export.JRXlsExporterParameter;
+
 import com.idega.block.dataquery.data.QueryResult;
 import com.idega.block.dataquery.data.QueryResultField;
 import com.idega.block.dataquery.data.sql.DirectSQLStatement;
@@ -55,10 +59,12 @@ import com.idega.idegaweb.IWResourceBundle;
 import com.idega.presentation.IWContext;
 import com.idega.presentation.PresentationObject;
 import com.idega.repository.data.RefactorClassRegistry;
+import com.idega.servlet.filter.IWBundleResourceFilter;
 import com.idega.user.business.UserGroupPlugInBusiness;
 import com.idega.user.data.Group;
 import com.idega.user.data.User;
 import com.idega.util.FileUtil;
+import com.idega.util.IOUtil;
 import com.idega.util.StringHandler;
 
 /**
@@ -70,31 +76,33 @@ import com.idega.util.StringHandler;
  * @version 1.0
  * Created on Jun 10, 2003
  */
-public class JasperReportBusinessBean extends IBOServiceBean implements JasperReportBusiness,UserGroupPlugInBusiness { 
-  
-  private static String REPORT_FOLDER = "reports";
+public class JasperReportBusinessBean extends IBOServiceBean implements JasperReportBusiness,UserGroupPlugInBusiness {
+
+private static String REPORT_FOLDER = "reports";
   private static String HTML_FILE_EXTENSION = "html";
   private static String XML_FILE_EXTENSION = "xml";
   private static String PDF_FILE_EXTENSION = "pdf";
   private static String EXCEL_FILE_EXTENSION = "xls";
-  
+
   private static String REPORT_COLUMN_PARAMETER_NAME = "Column_";
   private static char DOT = '.';
-  
-  public JasperPrint getReport(JRDataSource dataSource, Map parameterMap, JasperDesign design) throws JRException {
+
+  @Override
+public JasperPrint getReport(JRDataSource dataSource, Map parameterMap, JasperDesign design) throws JRException {
     //System.out.println("JASPERREPORT: "+parameterMap.toString());
     JasperReport report = JasperManager.compileReport(design);
     return JasperFillManager.fillReport(report, parameterMap, dataSource);
   }
-  
+
   private void synchronizeAndReset(QueryResult dataSource, DesignBox designBox) {
     synchronizeResultAndDesign(dataSource, designBox);
-    // henceforth we treat the QueryResult as a JRDataSource, 
-    // therefore we reset the QueryResult to prepare it 
+    // henceforth we treat the QueryResult as a JRDataSource,
+    // therefore we reset the QueryResult to prepare it
     dataSource.resetDataSource(); // resets only the DataSource functionality (sets the pointer to the first row)
   }
-  
-  public JasperPrint printSynchronizedReport(QueryResult dataSource, DesignBox designBox) {
+
+  @Override
+public JasperPrint printSynchronizedReport(QueryResult dataSource, DesignBox designBox) {
   	synchronizeAndReset(dataSource, designBox);
     JasperPrint print = null;
     try {
@@ -103,17 +111,18 @@ public class JasperReportBusinessBean extends IBOServiceBean implements JasperRe
     	print = getReport(dataSource, map, design);
     }
     catch (JRException ex)  {
-     logError("[ReportBusiness]: Jasper print could not be generated.");
-     log(ex);
+     getLogger().log(Level.WARNING, "Jasper print could not be generated. Data source: " + dataSource + ", design box: " + designBox, ex);
       return null;
     }
     return print;
   }
-  
-  public String getHtmlReport(JasperPrint print, String nameOfReport) {
+
+  @Override
+public String getHtmlReport(JasperPrint print, String nameOfReport) {
     // prepare path
     long folderIdentifier = System.currentTimeMillis();
     String path = getRealPathToReportFile(nameOfReport, HTML_FILE_EXTENSION,folderIdentifier);
+    getLogger().info("Starting to export report into HTML: " + path);
     try {
 		JasperExportManager.exportReportToHtmlFile(print, path);
 		/* Not needed since jasper 0.5 if you use utf-8
@@ -121,7 +130,7 @@ public class JasperReportBusinessBean extends IBOServiceBean implements JasperRe
 		 */
 		  JRHtmlExporter exporter = new JRHtmlExporter();
 			//to handle icelandic in html
-			//saw this in the JRHTMLExport of jasperreports	
+			//saw this in the JRHTMLExport of jasperreports
 
 		  String enc = getIWMainApplication().getSettings().getCharacterEncoding();
 		  if (enc == null) {
@@ -130,51 +139,57 @@ public class JasperReportBusinessBean extends IBOServiceBean implements JasperRe
 		  exporter.setParameter(JRExporterParameter.CHARACTER_ENCODING,enc);
 		  exporter.setParameter(JRExporterParameter.JASPER_PRINT, print);
 		  exporter.setParameter(JRExporterParameter.OUTPUT_FILE_NAME, path);
-		    
+
 		  exporter.exportReport();
     }
     catch (JRException ex)  {
-      logError("[ReportBusiness]: Jasper print could not be generated.");
-      log(ex);
+      getLogger().log(Level.WARNING, "Jasper print could not be generated at " + path + ". Print: " + print + ", name: " + nameOfReport, ex);
       return null;
     }
+    getLogger().info("Finished exporting report into HTML: " + path);
     return getURIToReport(nameOfReport, HTML_FILE_EXTENSION,folderIdentifier);
   }
 
-  public String getXmlReport(JasperPrint print, String nameOfReport) {
+  @Override
+public String getXmlReport(JasperPrint print, String nameOfReport) {
 	    // prepare path
 	    long folderIdentifier = System.currentTimeMillis();
 	    String path = getRealPathToReportFile(nameOfReport, XML_FILE_EXTENSION,folderIdentifier);
+	    getLogger().info("Starting to export report into XML: " + path);
 	    try {
 	    	JasperExportManager.exportReportToXmlFile(print, path, false);
 	    }
 	    catch (JRException ex)  {
-	    	logError("[ReportBusiness]: Jasper print could not be generated.");
-	    	log(ex);
+	    	getLogger().log(Level.WARNING, "Jasper print could not be generated at " + path + ". Print: " + print + ", name: " + nameOfReport, ex);
 	    	return null;
 	    }
+	    getLogger().info("Finished exporting report into XML: " + path);
 	    return getURIToReport(nameOfReport, XML_FILE_EXTENSION,folderIdentifier);
 	  }
-  
-  public String getPdfReport(JasperPrint print, String nameOfReport) {
+
+  @Override
+public String getPdfReport(JasperPrint print, String nameOfReport) {
     // prepare path
     long folderIdentifier = System.currentTimeMillis();
     String path = getRealPathToReportFile(nameOfReport, PDF_FILE_EXTENSION,folderIdentifier);
+    getLogger().info("Starting to export report into PDF: " + path);
     try {
     	JasperExportManager.exportReportToPdfFile(print, path);
     }
     catch (JRException ex)  {
-    	logError("[ReportBusiness]: Jasper print could not be generated.");
-    	log(ex);
+    	getLogger().log(Level.WARNING, "Jasper print could not be generated at " + path + ". Print: " + print + ", name: " + nameOfReport, ex);
     	return null;
     }
+    getLogger().info("Finished exporting report into PDF: " + path);
     return getURIToReport(nameOfReport, PDF_FILE_EXTENSION,folderIdentifier);
-  }  
-  
-  public String getExcelReport(JasperPrint print, String nameOfReport) {
+  }
+
+  @Override
+public String getExcelReport(JasperPrint print, String nameOfReport) {
     // prepare path
     long folderIdentifier = System.currentTimeMillis();
     String path = getRealPathToReportFile(nameOfReport, EXCEL_FILE_EXTENSION,folderIdentifier);
+    getLogger().info("Starting to export report into Excel: " + path);
     // see samples of the jasper download package
     try {
       JRXlsExporter exporter = new JRXlsExporter();
@@ -186,17 +201,18 @@ public class JasperReportBusinessBean extends IBOServiceBean implements JasperRe
       exporter.exportReport();
     }
     catch (JRException ex)  {
-      logError("[ReportBusiness]: Jasper print could not be generated.");
-      log(ex);
+      getLogger().log(Level.WARNING, "Jasper print could not be generated at " + path + ". Print: " + print + ", name: " + nameOfReport, ex);
       return null;
     }
+    getLogger().info("Finished exporting report into Excel: " + path);
     return getURIToReport(nameOfReport, EXCEL_FILE_EXTENSION,folderIdentifier);
-  }  
-  
-  public String getSynchronizedSimpleExcelReport(QueryResult dataSource, DesignBox designBox, String nameOfReport) {
+  }
+
+  @Override
+public String getSynchronizedSimpleExcelReport(QueryResult dataSource, DesignBox designBox, String nameOfReport) {
   	synchronizeAndReset(dataSource, designBox);
   	Map designerMap = designBox.getParameterMap();
-  	ReportDescription reportDescription = new ReportDescription(); 
+  	ReportDescription reportDescription = new ReportDescription();
   	Iterator iterator = designBox.getDesign().getFieldsList().iterator();
   	int columnNumber = 1;
   	while (iterator.hasNext()) {
@@ -205,8 +221,8 @@ public class JasperReportBusinessBean extends IBOServiceBean implements JasperRe
   	    ReportableField reportField = new ReportableField(designFieldId, String.class);
   	    // now the customMadeFieldName of the reportField is the designFieldId
   	    // do not get confused: customMadeFieldName is an identifier, not a display string
-  	    
-  	    // get the already localized display name from the parameter map 
+
+  	    // get the already localized display name from the parameter map
   	    String columnKey = getColumnParameter(columnNumber++);
   	    String displayName = (String) designerMap.get(columnKey);
   	    // avoid trouble
@@ -219,39 +235,40 @@ public class JasperReportBusinessBean extends IBOServiceBean implements JasperRe
 
   	    reportDescription.addField(reportField);
   	}
-  	String reportTitle = (String) designerMap.get(DesignBox.REPORT_HEADLINE_KEY); 
+  	String reportTitle = (String) designerMap.get(DesignBox.REPORT_HEADLINE_KEY);
   	return getSimpleExcelReportWithFileName(dataSource, reportTitle, reportDescription, nameOfReport);
   }
-    
-  public String getSimpleExcelReport(JRDataSource reportData, String nameOfReport, ReportDescription description) {
+
+  @Override
+public String getSimpleExcelReport(JRDataSource reportData, String nameOfReport, ReportDescription description) {
   	return getSimpleExcelReportWithFileName(reportData, nameOfReport, description, "report");
   }
-  	
-  	
+
+
   private String getSimpleExcelReportWithFileName(JRDataSource reportData, String nameOfReport, ReportDescription description, String fileName) {
     // prepare path
     long folderIdentifier = System.currentTimeMillis();
     String path = getRealPathToReportFile(fileName, EXCEL_FILE_EXTENSION,folderIdentifier);
 
     try {
-		SimpleReportBusiness srBusiness = (SimpleReportBusiness) IBOLookup.getServiceInstance(getIWApplicationContext(),SimpleReportBusiness.class);
+		SimpleReportBusiness srBusiness = IBOLookup.getServiceInstance(getIWApplicationContext(),SimpleReportBusiness.class);
 		srBusiness.writeSimpleExcelFile(reportData,nameOfReport,path, description);
 	}
 	catch (IBOLookupException e) {
-	      logError("[ReportBusiness]: The Simple Report could not be generated.");
-	      log(e);
+	      getLogger().log(Level.WARNING, "The Simple Report could not be generated. Report data: " + reportData + ", name: " + nameOfReport +
+	    		  ", description: " + description + ", file name: " + fileName, e);
 	      return null;
 	}
 	catch (IOException e) {
-	      logError("[ReportBusiness]: The Simple Report could not be generated.");
-	      log(e);
+			getLogger().log(Level.WARNING, "The Simple Report could not be generated. Report data: " + reportData + ", name: " + nameOfReport +
+	    		  ", description: " + description + ", file name: " + fileName, e);
 	      return null;
-	}    
-    
-    return getURIToReport(fileName, EXCEL_FILE_EXTENSION,folderIdentifier);
-  }  
+	}
 
-  
+    return getURIToReport(fileName, EXCEL_FILE_EXTENSION,folderIdentifier);
+  }
+
+
   private String getRealPathToReportFile(String fileName, String extension, long folderIdentifier) {
     IWMainApplication mainApp = getIWApplicationContext().getIWMainApplication();
     String separator = FileUtil.getFileSeparator();
@@ -265,7 +282,7 @@ public class JasperReportBusinessBean extends IBOServiceBean implements JasperRe
     // the folder is never deleted by this class
     String folderPath = path.toString();
     File[] files = FileUtil.getAllFilesInDirectory(folderPath);
-    
+
     if(files!=null){
     	long currentTime = System.currentTimeMillis();
 	    for (int i = 0; i < files.length; i++) {
@@ -273,21 +290,37 @@ public class JasperReportBusinessBean extends IBOServiceBean implements JasperRe
 	    	long modifiedFile = file.lastModified();
 	    	if (currentTime - modifiedFile > 300000)	{
 	    		FileUtil.deleteFileAndChildren(file);
+	    		getLogger().info("Deleting file " + file);
 	    	}
 	    }
     }
-    
+
 		path.append(separator);
 		path.append(folderIdentifier);
 		folderPath = path.toString();
-		FileUtil.createFolder(folderPath);
+
+		if (!FileUtil.exists(folderPath)) {
+			FileUtil.createFolder(folderPath);
+			getLogger().info("Created folder: " + folderPath);
+		} else {
+			getLogger().info("Folder: " + folderPath + " already exists!");
+		}
+
 		path.append(separator)
       .append(fileName)
       .append(DOT)
       .append(extension);
+
+		if (!FileUtil.exists(path.toString())) {
+			FileUtil.createFile(path.toString());
+			getLogger().info("Created file: " + path);
+		} else {
+			getLogger().info("File: " + path + " already exists!");
+		}
+
     return path.toString();
   }
-  
+
   private String getURIToReport(String reportName, String extension, long folderIdentifier) {
     IWMainApplication mainApp = getIWApplicationContext().getIWMainApplication();
     String separator = "/";
@@ -338,7 +371,7 @@ public class JasperReportBusinessBean extends IBOServiceBean implements JasperRe
         	}
         }
         else {
-        	// ignore the default display that was set by the design use the display that is suggested by the query 
+        	// ignore the default display that was set by the design use the display that is suggested by the query
         	designParameterMap.put(displayKey, display);
         }
       }
@@ -346,14 +379,14 @@ public class JasperReportBusinessBean extends IBOServiceBean implements JasperRe
     }
     removeFields(designFieldsToRemove, reportDesign);
   }
-  
+
   private String getColumnParameter(int orderNumber) {
   	 StringBuffer buffer = new StringBuffer(REPORT_COLUMN_PARAMETER_NAME);
      buffer.append(orderNumber);
      return buffer.toString();
   }
-    
-    
+
+
   private void removeFields(Collection fieldNames, JasperDesign design) {
     // prepare (get the order of the fields)
     List fieldOrder = new ArrayList();
@@ -366,12 +399,12 @@ public class JasperReportBusinessBean extends IBOServiceBean implements JasperRe
     JRBand header = design.getColumnHeader();
     List headerChildren = header.getChildren();
     int headerChildrenSize = headerChildren.size();
-    
+
     JRBand detail = design.getDetail();
     List detailChildren = detail.getChildren();
     int detailChildrenSize = detailChildren.size();
-    
-    // remove the redundant design fields 
+
+    // remove the redundant design fields
     Iterator removeIterator = fieldNames.iterator();
     int indexCorrection = 0;
     while (removeIterator.hasNext())  {
@@ -389,12 +422,13 @@ public class JasperReportBusinessBean extends IBOServiceBean implements JasperRe
       	detailChildrenSize--;
       }
       // adjust the index because elements have been removed
-      indexCorrection++; 
+      indexCorrection++;
     }
   }
 
 
-  public DesignBox getDesignBox(int designFileId) {
+  @Override
+public DesignBox getDesignBox(int designFileId) {
     ICFile reportDesign = getFile(designFileId);
     InputStream inputStream = null;
     try {
@@ -405,30 +439,25 @@ public class JasperReportBusinessBean extends IBOServiceBean implements JasperRe
       return designBox;
     }
     catch (JRException jrEx) {
-    	logError("[JasperReportBusiness] Problems loading design");
-    	log(jrEx);
+    	getLogger().log(Level.WARNING, "Problems loading design. Design file ID: " + designFileId, jrEx);
     }
     finally {
-      try {
-        inputStream.close();
-      }
-      catch (IOException streamEx)  {
-      	//do not hide an existing exception 
-      }
+      IOUtil.close(inputStream);
     }
     return null;
-  }    
-  
-  public DesignBox getDynamicDesignBox(SQLQuery query, IWResourceBundle resourceBundle, IWContext iwc) throws IOException, JRException {
+  }
+
+  @Override
+public DesignBox getDynamicDesignBox(SQLQuery query, IWResourceBundle resourceBundle, IWContext iwc) throws IOException, JRException {
   	final int columnSpacing = 15;
   	int columnWidth = 120;
   	final int labelWidth = 95;
   	final int valueWidth = 55;
-  	
+
   	Map parameterMap = new HashMap();
-  	
+
   	DynamicReportDesign design = DynamicReportDesign.getInstanceThatShowsDateAndUser("GeneratedDesign");
-  	// add date 
+  	// add date
   	Date date = new Date();
   	String pattern = "dd.MM.yyyy, HH:mm";
   	SimpleDateFormat dateFormat = new SimpleDateFormat(pattern);
@@ -499,33 +528,29 @@ public class JasperReportBusinessBean extends IBOServiceBean implements JasperRe
 	  		// get handler
 	  		String inputHandlerClassName = inputDescription.getHandlerDescription();
 	  		String inputValueDisplay = null;
-	  		if (inputHandlerClassName != null) { 
+	  		if (inputHandlerClassName != null) {
 	  			try {
 	  				Class inputHandlerClass = RefactorClassRegistry.forName(inputHandlerClassName);
 	  				InputHandler inputHandler = (InputHandler) inputHandlerClass.newInstance();
 	  				String[] inputValuesAsArray =  (String[]) inputValues.toArray(new String[0]);
-	  				// method below throws Exception 
+	  				// method below throws Exception
 	  				Object resultingObject = inputHandler.getResultingObject(inputValuesAsArray, iwc);
 	  				inputValueDisplay = inputHandler.getDisplayForResultingObject(resultingObject, iwc);
 	  			}
 	  			catch (ClassNotFoundException classEx) {
-	  				logError("[JasperReportBusiness] Inputhandler class could not be found");
-	  				log(classEx);
+	  				getLogger().log(Level.WARNING, "Inputhandler class could not be found", classEx);
 	  				inputValueDisplay = inputValues.toString();
 	  			}
 	  			catch (InstantiationException insEx) {
-	  				logError("[JasperReportBusiness] Inputhandler class could not be instanciated");
-	  				log(insEx);
+	  				getLogger().log(Level.WARNING, "Inputhandler class could not be instanciated", insEx);
 	  				inputValueDisplay = inputValues.toString();
 	  			}
 	  			catch (IllegalAccessException accEx) {
-	  				logError("[JasperReportBusiness] Inputhandler class could not be instanciated");
-	  				log(accEx);
+	  				getLogger().log(Level.WARNING, "Inputhandler class could not be instanciated", accEx);
 	  				inputValueDisplay = inputValues.toString();
-	  			}	
+	  			}
 	  			catch (Exception ex) {
-	  				logError("[JasperReportBusiness] Resulting object could not be fetched");
-	  				log(ex);
+	  				getLogger().log(Level.WARNING, "Resulting object could not be fetched", ex);
 	  				inputValueDisplay = inputValues.toString();
 	  			}
 	  		}
@@ -562,41 +587,53 @@ public class JasperReportBusinessBean extends IBOServiceBean implements JasperRe
   	designBox.setParameterMap(parameterMap);
   	return designBox;
   }
-  	
-  		
-  		
-  	
-  
-  
-  
-  public JasperDesign getDesignFromBundle(IWBundle bundle, String layoutXMLFileName) {
-	FileInputStream inputStream = null;
+
+  private InputStream getInputStream(IWBundle bundle, String fileName) throws FileNotFoundException {
+	  return getInputStream(bundle.getRealPathWithFileNameString(fileName));
+  }
+  private InputStream getInputStream(String realFileName) throws FileNotFoundException {
+	  InputStream stream = null;
+	  try {
+		  stream = new FileInputStream(new File(realFileName));
+	  } catch (Exception e) {}
+	  if (stream == null) {
+		  String uri = realFileName.substring(realFileName.indexOf("/idegaweb/bundles/"));
+			try {
+				File tmpFile = IWBundleResourceFilter.copyResourceFromJarToWebapp(IWMainApplication.getDefaultIWMainApplication(), uri);
+				stream = new FileInputStream(tmpFile);
+			} catch (Exception e) {
+				getLogger().log(Level.WARNING, "Error getting stream for " + uri, e);
+			}
+
+	  }
+
+	  if (stream == null) {
+		  throw new FileNotFoundException("File can not be found: " + realFileName);
+	  }
+
+	  return stream;
+  }
+
+  @Override
+public JasperDesign getDesignFromBundle(IWBundle bundle, String layoutXMLFileName) {
+	InputStream inputStream = null;
   	try {
-	  inputStream = new FileInputStream(new File(bundle.getRealPathWithFileNameString(layoutXMLFileName)));
+  		inputStream = getInputStream(bundle, layoutXMLFileName);
 
 	  JasperDesign design = JasperManager.loadXmlDesign(inputStream);
 	  return design;
 	}
 	catch (JRException ex)  {
-	  logError("[JasperReportBusiness]: File could not be loaded");
-	  log(ex);
+	  getLogger().log(Level.WARNING, "File could not be loaded: " + layoutXMLFileName + " from " + bundle, ex);
 	}
 	catch (FileNotFoundException fileEx) {
-	  logError("[JasperReportBusiness]: File could not be loaded");
-	  log(fileEx);
+	  getLogger().log(Level.WARNING, "File could not be loaded: " + layoutXMLFileName + " from " + bundle, fileEx);
 	}
-	finally {	
-	  try {
-	  	if(inputStream!=null){
-	  		inputStream.close();
-	  	}
-	  }
-	  catch (IOException streamEx)  {
-	  	// do not hide an existing exception
-	  }
+	finally {
+		IOUtil.close(inputStream);
 	}
 	return null;
-  }    
+  }
 
   private ICFile getFile(int fileId)  {
     try {
@@ -608,22 +645,23 @@ public class JasperReportBusinessBean extends IBOServiceBean implements JasperRe
     catch(Exception ex){
       throw new RuntimeException("[JasperReportBusiness]: Message was: " + ex.getMessage());
     }
-  }     
-    
-    
-    
-    
+  }
+
+
+
+
+	@Override
 	public JasperDesign generateLayout(JRDataSource _dataSource) throws IOException, JRException{
 		int columnWidth = 120;
-			
+
 		DynamicReportDesign designTemplate = new DynamicReportDesign("GeneratedReport");
-		
+
 		ReportDescription description = null;
 		if(_dataSource != null && _dataSource instanceof ReportableCollection){
 			ReportableCollection rcSource = ((ReportableCollection)_dataSource);
-			description = rcSource.getReportDescription();			
+			description = rcSource.getReportDescription();
 		}
-		
+
 		if(description != null ){
 			Iterator keyIter = description.getListOfHeaderParameterLabelKeys().iterator();
 			Iterator valueIter = description.getListOfHeaderParameterKeys().iterator();
@@ -632,9 +670,9 @@ public class JasperReportBusinessBean extends IBOServiceBean implements JasperRe
 				String valueKey = (String)valueIter.next();
 				designTemplate.addHeaderParameter(labelKey,description.getWithOfParameterOrLabel(labelKey),valueKey,String.class,description.getWithOfParameterOrLabel(valueKey));
 			}
-			
-			
-			
+
+
+
 			List allFields = description.getListOfFields();
 			if(allFields != null && allFields.size() > 0){
 				//TMP
@@ -651,16 +689,16 @@ public class JasperReportBusinessBean extends IBOServiceBean implements JasperRe
 					ReportableField field = (ReportableField)iter.next();
 					String name = field.getName();
 					designTemplate.addField(name,field.getValueClass(),columnWidth);
-				} 	
+				}
 			}
 
 		}
-	
+
 		designTemplate.close();
 		return designTemplate.getJasperDesign(this.getIWApplicationContext());
 	}
 
-    
+
 	private int calculateTextFieldWidthForString(String str, int fontSize){
 		return (int)( 10 +(str.length()* fontSize *0.58));
 	}
@@ -668,30 +706,35 @@ public class JasperReportBusinessBean extends IBOServiceBean implements JasperRe
 	/* (non-Javadoc)
 	 * @see com.idega.user.business.UserGroupPlugInBusiness#beforeUserRemove(com.idega.user.data.User)
 	 */
+	@Override
 	public void beforeUserRemove(User user, Group parentGroup) throws RemoveException, RemoteException {
 	}
 
 	/* (non-Javadoc)
 	 * @see com.idega.user.business.UserGroupPlugInBusiness#afterUserCreate(com.idega.user.data.User)
 	 */
+	@Override
 	public void afterUserCreateOrUpdate(User user, Group parentGroup) throws CreateException, RemoteException {
 	}
 
 	/* (non-Javadoc)
 	 * @see com.idega.user.business.UserGroupPlugInBusiness#beforeGroupRemove(com.idega.user.data.Group)
 	 */
+	@Override
 	public void beforeGroupRemove(Group group, Group parentGroup) throws RemoveException, RemoteException {
 	}
 
 	/* (non-Javadoc)
 	 * @see com.idega.user.business.UserGroupPlugInBusiness#afterGroupCreate(com.idega.user.data.Group)
 	 */
+	@Override
 	public void afterGroupCreateOrUpdate(Group group, Group parentGroup) throws CreateException, RemoteException {
 	}
 
 	/* (non-Javadoc)
 	 * @see com.idega.user.business.UserGroupPlugInBusiness#instanciateEditor(com.idega.user.data.Group)
 	 */
+	@Override
 	public PresentationObject instanciateEditor(Group group) throws RemoteException {
 		return null;
 	}
@@ -699,6 +742,7 @@ public class JasperReportBusinessBean extends IBOServiceBean implements JasperRe
 	/* (non-Javadoc)
 	 * @see com.idega.user.business.UserGroupPlugInBusiness#instanciateViewer(com.idega.user.data.Group)
 	 */
+	@Override
 	public PresentationObject instanciateViewer(Group group) throws RemoteException {
 		return null;
 	}
@@ -706,6 +750,7 @@ public class JasperReportBusinessBean extends IBOServiceBean implements JasperRe
 	/* (non-Javadoc)
 	 * @see com.idega.user.business.UserGroupPlugInBusiness#getUserPropertiesTabs(com.idega.user.data.User)
 	 */
+	@Override
 	public List getUserPropertiesTabs(User user) throws RemoteException {
 		return null;
 	}
@@ -713,6 +758,7 @@ public class JasperReportBusinessBean extends IBOServiceBean implements JasperRe
 	/* (non-Javadoc)
 	 * @see com.idega.user.business.UserGroupPlugInBusiness#getGroupPropertiesTabs(com.idega.user.data.Group)
 	 */
+	@Override
 	public List getGroupPropertiesTabs(Group group) throws RemoteException {
 		return null;
 	}
@@ -720,6 +766,7 @@ public class JasperReportBusinessBean extends IBOServiceBean implements JasperRe
 	/* (non-Javadoc)
 	 * @see com.idega.user.business.UserGroupPlugInBusiness#getMainToolbarElements()
 	 */
+	@Override
 	public List getMainToolbarElements() throws RemoteException {
 		List list = new ArrayList(1);
 		list.add(new ReportOverviewWindowPlugin());
@@ -729,6 +776,7 @@ public class JasperReportBusinessBean extends IBOServiceBean implements JasperRe
 	/* (non-Javadoc)
 	 * @see com.idega.user.business.UserGroupPlugInBusiness#getGroupToolbarElements(com.idega.user.data.Group)
 	 */
+	@Override
 	public List getGroupToolbarElements(Group group) throws RemoteException {
 		return null;
 	}
@@ -736,6 +784,7 @@ public class JasperReportBusinessBean extends IBOServiceBean implements JasperRe
 	/* (non-Javadoc)
 	 * @see com.idega.user.business.UserGroupPlugInBusiness#isUserAssignableFromGroupToGroup(com.idega.user.data.User, com.idega.user.data.Group, com.idega.user.data.Group)
 	 */
+	@Override
 	public String isUserAssignableFromGroupToGroup(User user, Group sourceGroup, Group targetGroup) {
 		return null;
 	}
@@ -743,6 +792,7 @@ public class JasperReportBusinessBean extends IBOServiceBean implements JasperRe
 	/* (non-Javadoc)
 	 * @see com.idega.user.business.UserGroupPlugInBusiness#isUserSuitedForGroup(com.idega.user.data.User, com.idega.user.data.Group)
 	 */
+	@Override
 	public String isUserSuitedForGroup(User user, Group targetGroup) {
 		return null;
 	}
@@ -750,9 +800,10 @@ public class JasperReportBusinessBean extends IBOServiceBean implements JasperRe
 	/* (non-Javadoc)
 	 * @see com.idega.user.business.UserGroupPlugInBusiness#canCreateSubGroup(com.idega.user.data.Group,java.lang.String)
 	 */
+	@Override
 	public String canCreateSubGroup(Group group, String groupTypeOfSubGroup) throws RemoteException {
 		return null;
 	}
-    
-    
+
+
 }

@@ -25,20 +25,20 @@ import com.idega.data.IDOReportableField;
  * @version		1.0
  */
 public class ReportableField implements IDOReportableField, JRField {
-	
+
 	private int _typeOfContainedField;
 	private static final int CONTAINED_FIELD_TYPE_IDOFIELD = 0;
 	private static final int CONTAINED_FIELD_TYPE_JRFIELD = 1;
 	private static final int CONTAINED_FIELD_TYPE_NONE = 2;
-	private Map _localizedNames = new HashMap();
-	
+	private Map<Locale, String> _localizedNames = new HashMap<Locale, String>();
+
 	private JRField _jrField = null;
 	private IDOEntityField _idoField = null;
 	private String _customMadeFiledName = null;
-	private Class _customMadeValueClass = null;
-	
+	private Class<?> _customMadeValueClass = null;
+
 	private int _fieldsMaxNumberOfCharacters = 15;
-	
+
 	/**
 	 * @param field
 	 */
@@ -46,14 +46,14 @@ public class ReportableField implements IDOReportableField, JRField {
 		this._jrField=field;
 		this._typeOfContainedField = CONTAINED_FIELD_TYPE_JRFIELD;
 	}
-	
 
-	public ReportableField(String name, Class valueClass) {
+
+	public ReportableField(String name, Class<?> valueClass) {
 		this._customMadeFiledName = name;
 		this._customMadeValueClass = valueClass;
 		this._typeOfContainedField = CONTAINED_FIELD_TYPE_NONE;
 	}
-	
+
 	public ReportableField(IDOEntityField field){
 		this._idoField = field;
 		this._typeOfContainedField=CONTAINED_FIELD_TYPE_IDOFIELD;
@@ -62,13 +62,13 @@ public class ReportableField implements IDOReportableField, JRField {
 			this._localizedNames = ((EntityAttribute)this._idoField).getMapOfLocalizedNames();
 		}
 	}
-	
+
 	public ReportableField(String name, IDOEntityField field){
 		this(field);
 		this._customMadeFiledName = name;
 	}
-	
-	
+
+
 	public void setCustomMadeFieldName(String name){
 		this._customMadeFiledName = name;
 	}
@@ -76,6 +76,7 @@ public class ReportableField implements IDOReportableField, JRField {
 	/* (non-Javadoc)
 	 * @see com.idega.data.IDOReportableField#getName()
 	 */
+	@Override
 	public String getName() {
 		if(this._customMadeFiledName != null){
 			return this._customMadeFiledName;
@@ -85,7 +86,7 @@ public class ReportableField implements IDOReportableField, JRField {
 					return this._jrField.getName();
 				default :
 					return this._idoField.getSQLFieldName();
-			}			
+			}
 		}
 
 	}
@@ -93,6 +94,7 @@ public class ReportableField implements IDOReportableField, JRField {
 	/* (non-Javadoc)
 	 * @see com.idega.data.IDOReportableField#getDescription()
 	 */
+	@Override
 	public String getDescription() {
 		switch (this._typeOfContainedField) {
 			case CONTAINED_FIELD_TYPE_JRFIELD :
@@ -105,6 +107,7 @@ public class ReportableField implements IDOReportableField, JRField {
 	/* (non-Javadoc)
 	 * @see com.idega.data.IDOReportableField#setDescription(java.lang.String)
 	 */
+	@Override
 	public void setDescription(String description) {
 		switch (this._typeOfContainedField) {
 			case CONTAINED_FIELD_TYPE_JRFIELD :
@@ -120,7 +123,8 @@ public class ReportableField implements IDOReportableField, JRField {
 	/* (non-Javadoc)
 	 * @see com.idega.data.IDOReportableField#getValueClass()
 	 */
-	public Class getValueClass() {
+	@Override
+	public Class<?> getValueClass() {
 		if(this._customMadeValueClass != null){
 			return this._customMadeValueClass;
 		} else {
@@ -131,13 +135,14 @@ public class ReportableField implements IDOReportableField, JRField {
 					return this._idoField.getDataTypeClass();
 			}
 		}
-		
+
 	}
-	
-	public void setValueClass(Class valClass){
+
+	public void setValueClass(Class<?> valClass){
 		this._customMadeValueClass = valClass;
 	}
 
+	@Override
 	public String getValueClassName() {
 		return getValueClass().getName();
 	}
@@ -145,8 +150,9 @@ public class ReportableField implements IDOReportableField, JRField {
 	/* (non-Javadoc)
 	 * @see com.idega.data.IDOReportableField#getLocalizedName(java.util.Locale)
 	 */
+	@Override
 	public String getLocalizedName(Locale locale) {
-		String s = (String)this._localizedNames.get(locale);
+		String s = this._localizedNames.get(locale);
 		if(s == null){
 			s = getName();
 		}
@@ -156,16 +162,51 @@ public class ReportableField implements IDOReportableField, JRField {
 	/* (non-Javadoc)
 	 * @see com.idega.data.IDOReportableField#setLocalizedName(java.lang.String, java.util.Locale)
 	 */
+	@Override
 	public void setLocalizedName(String name, Locale locale) {
 		this._localizedNames.put(locale, name);
 	}
-	
+
 	public int getMaxNumberOfCharacters(){
 		return this._fieldsMaxNumberOfCharacters;
 	}
-	
+
 	public void setMaxNumberOfCharacters(int number){
 		this._fieldsMaxNumberOfCharacters = number;
 	}
+
+
+//	@Override
+//	public JRPropertiesHolder getParentProperties() {
+//		// TODO Auto-generated method stub
+//		return null;
+//	}
+//
+//
+//	@Override
+//	public JRPropertiesMap getPropertiesMap() {
+//		// TODO Auto-generated method stub
+//		return null;
+//	}
+//
+//
+//	@Override
+//	public boolean hasProperties() {
+//		// TODO Auto-generated method stub
+//		return false;
+//	}
+//
+//
+//	@Override
+//	public Object clone() {
+//		// TODO Auto-generated method stub
+//		try {
+//			return super.clone();
+//		} catch (CloneNotSupportedException e) {
+//			// TODO Auto-generated catch block
+//			e.printStackTrace();
+//		}
+//		return null;
+//	}
 
 }
