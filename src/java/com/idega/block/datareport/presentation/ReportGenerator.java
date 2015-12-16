@@ -7,7 +7,6 @@ package com.idega.block.datareport.presentation;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
@@ -30,11 +29,6 @@ import java.util.logging.Level;
 
 import javax.ejb.FinderException;
 
-import net.sf.jasperreports.engine.JRDataSource;
-import net.sf.jasperreports.engine.JRException;
-import net.sf.jasperreports.engine.JasperPrint;
-import net.sf.jasperreports.engine.design.JasperDesign;
-
 import com.idega.block.dataquery.business.QueryService;
 import com.idega.block.dataquery.data.Query;
 import com.idega.block.dataquery.data.QueryHome;
@@ -56,9 +50,12 @@ import com.idega.block.datareport.xml.methodinvocation.MethodInvocationDocument;
 import com.idega.block.datareport.xml.methodinvocation.MethodInvocationParser;
 import com.idega.business.HiddenInputHandler;
 import com.idega.business.IBOLookup;
+import com.idega.business.IBOService;
+import com.idega.business.IBOSession;
 import com.idega.business.InputHandler;
 import com.idega.core.accesscontrol.business.AccessController;
 import com.idega.core.file.data.ICFile;
+import com.idega.data.IDOEntity;
 import com.idega.data.IDOLookup;
 import com.idega.data.IDOLookupException;
 import com.idega.idegaweb.IWBundle;
@@ -71,6 +68,7 @@ import com.idega.presentation.Table;
 import com.idega.presentation.text.Link;
 import com.idega.presentation.text.Text;
 import com.idega.presentation.ui.BackButton;
+import com.idega.presentation.ui.CheckBoxInputHandler;
 import com.idega.presentation.ui.Form;
 import com.idega.presentation.ui.HiddenInput;
 import com.idega.presentation.ui.InterfaceObject;
@@ -81,8 +79,14 @@ import com.idega.user.business.GroupBusiness;
 import com.idega.user.data.Group;
 import com.idega.user.data.User;
 import com.idega.util.IWTimestamp;
+import com.idega.util.StringUtil;
 import com.idega.util.reflect.MethodFinder;
 import com.idega.xml.XMLException;
+
+import net.sf.jasperreports.engine.JRDataSource;
+import net.sf.jasperreports.engine.JRException;
+import net.sf.jasperreports.engine.JasperPrint;
+import net.sf.jasperreports.engine.design.JasperDesign;
 
 /**
  * Title: ReportGenerator Description: Copyright: Copyright (c) 2003 Company: idega Software
@@ -93,19 +97,24 @@ import com.idega.xml.XMLException;
  */
 public class ReportGenerator extends Block {
 
-	public static final String HTML_FORMAT = "html";
-	public static final String XML_FORMAT = "xml";
-	public static final String PDF_FORMAT = "pdf";
-	public static final String EXCEL_FORMAT = "excel";
-	public static final String SIMPLE_EXCEL_FORMAT = "simple_excel";
-	public static final String DEFAULT_REPORT_NAME = "Generated Report";
-	public final static String STYLE = "font-family:arial; font-size:8pt; color:#000000; text-align: justify; border: 1 solid #000000;";
-	public final static String STYLE_2 = "font-family:arial; font-size:8pt; color:#000000; text-align: justify;";
-	public final static String PRIFIX_PRM = "dr_";
-	private static final String PRM_STATE = "dr_gen_state";
-	private static final String VALUE_STATE_GENERATE_REPORT = "2";
-	private static final String IW_BUNDLE_IDENTIFIER = "com.idega.block.datareport";
-	private static final String SESSION_KEY_TOP_NODES = "top_nodes_for_user";
+	public static final String	HTML_FORMAT = "html",
+								XML_FORMAT = "xml",
+								PDF_FORMAT = "pdf",
+								EXCEL_FORMAT = "excel",
+								SIMPLE_EXCEL_FORMAT = "simple_excel",
+
+								DEFAULT_REPORT_NAME = "Generated Report",
+
+								STYLE = "font-family:arial; font-size:8pt; color:#000000; text-align: justify; border: 1 solid #000000;",
+								STYLE_2 = "font-family:arial; font-size:8pt; color:#000000; text-align: justify;",
+
+								PRIFIX_PRM = "dr_",
+
+								IW_BUNDLE_IDENTIFIER = "com.idega.block.datareport";
+
+	private static final String PRM_STATE = "dr_gen_state",
+								VALUE_STATE_GENERATE_REPORT = "2",
+								SESSION_KEY_TOP_NODES = "top_nodes_for_user";
 
 	private Integer queryPK = null;
 	private Integer methodInvocationPK = null;
@@ -116,7 +125,8 @@ public class ReportGenerator extends Block {
 	private IWBundle methodInvocationIWBundle = null;
 
 	private MethodInvocationDocument methodInvokeDoc = null;
-	private List dynamicFields = new ArrayList();
+	private List<ClassDescription> dynamicFields = new ArrayList<ClassDescription>();
+	private List<ReportableField> reportableFields = new ArrayList<ReportableField>();
 	private Map<String, String> reportFilePathsMap = new HashMap<String, String>();
 	private QueryHelper queryParser = null;
 	private JRDataSource dataSource = null;
@@ -124,7 +134,7 @@ public class ReportGenerator extends Block {
 	private JasperDesign design = null;
 	private ReportDescription reportDescription = null;// new ReportDescription();
 
-	private List maintainParameterList = new ArrayList();
+	private List<String> maintainParameterList = new ArrayList<String>();
 
 	private final static String prmLablePrefix = "label_";
 
@@ -175,12 +185,10 @@ public class ReportGenerator extends Block {
 			while (iter.hasNext()) {
 				QueryConditionPart element = (QueryConditionPart) iter.next();
 				if (element.isDynamic()) {
-					this.dynamicFields.add(new ReportableField(element.getIDOEntityField()));
+					this.reportableFields.add(new ReportableField(element.getIDOEntityField()));
 				}
 			}
 		}
-
-		// _dynamicFields
 	}
 
 	public void setParameterToMaintain(String param) {
@@ -227,31 +235,29 @@ public class ReportGenerator extends Block {
 
 		this.reportDescription.setLocale(iwc.getCurrentLocale());
 
-		if (this.dynamicFields != null && this.dynamicFields.size() > 0) {
-			if (this.queryPK != null) {
-				Iterator iter = this.dynamicFields.iterator();
-				while (iter.hasNext()) {
-					ReportableField element = (ReportableField) iter.next();
-					String prmName = element.getName();
-					String tmpPrmLabel = (String) this.reportDescription.get(this.prmLablePrefix + prmName);
-					String tmpPrmValue = (String) this.reportDescription.get(prmName);
+		if (this.queryPK != null) {
+			Iterator<ReportableField> iter = this.reportableFields.iterator();
+			while (iter.hasNext()) {
+				ReportableField element = iter.next();
+				String prmName = element.getName();
+				String tmpPrmLabel = (String) this.reportDescription.get(this.prmLablePrefix + prmName);
+				String tmpPrmValue = (String) this.reportDescription.get(prmName);
+				int tmpPrmLabelWidth = (tmpPrmLabel != null) ? calculateTextFieldWidthForString(tmpPrmLabel) : prmLableWidth;
+				int tmpPrmValueWidth = (tmpPrmValue != null) ? calculateTextFieldWidthForString(tmpPrmValue) : prmValueWidth;
+				this.reportDescription.addHeaderParameter(this.prmLablePrefix + prmName, tmpPrmLabelWidth, prmName, String.class, tmpPrmValueWidth);
+			}
+		}
+		else {
+			Iterator<ClassDescription> iter = this.dynamicFields.iterator();
+			while (iter.hasNext()) {
+				ClassDescription element = iter.next();
+				String prmName = element.getName();
+				String tmpPrmLabel = (String) this.reportDescription.get(this.prmLablePrefix + prmName);
+				String tmpPrmValue = (String) this.reportDescription.get(prmName);
+				if (tmpPrmLabel != null && tmpPrmValue != null) {
 					int tmpPrmLabelWidth = (tmpPrmLabel != null) ? calculateTextFieldWidthForString(tmpPrmLabel) : prmLableWidth;
 					int tmpPrmValueWidth = (tmpPrmValue != null) ? calculateTextFieldWidthForString(tmpPrmValue) : prmValueWidth;
 					this.reportDescription.addHeaderParameter(this.prmLablePrefix + prmName, tmpPrmLabelWidth, prmName, String.class, tmpPrmValueWidth);
-				}
-			}
-			else {
-				Iterator iter = this.dynamicFields.iterator();
-				while (iter.hasNext()) {
-					ClassDescription element = (ClassDescription) iter.next();
-					String prmName = element.getName();
-					String tmpPrmLabel = (String) this.reportDescription.get(this.prmLablePrefix + prmName);
-					String tmpPrmValue = (String) this.reportDescription.get(prmName);
-					if (tmpPrmLabel != null && tmpPrmValue != null) {
-						int tmpPrmLabelWidth = (tmpPrmLabel != null) ? calculateTextFieldWidthForString(tmpPrmLabel) : prmLableWidth;
-						int tmpPrmValueWidth = (tmpPrmValue != null) ? calculateTextFieldWidthForString(tmpPrmValue) : prmValueWidth;
-						this.reportDescription.addHeaderParameter(this.prmLablePrefix + prmName, tmpPrmLabelWidth, prmName, String.class, tmpPrmValueWidth);
-					}
 				}
 			}
 		}
@@ -383,6 +389,18 @@ public class ReportGenerator extends Block {
 
 	}
 
+	private Map<String, String[]> values = new HashMap<>();
+	private String[] getValues(String param) {
+		return values.get(param);
+	}
+
+	public void addValues(String param, String value) {
+		addValues(param, new String[] {value});
+	}
+	public void addValues(String param, String[] values) {
+		this.values.put(param, values);
+	}
+
 	private ThreadRunDataSourceCollector generateDataSource(IWContext iwc) throws XMLException, Exception {
 		Locale currentLocale = iwc.getCurrentLocale();
 		if (this.queryPK != null) {
@@ -399,7 +417,7 @@ public class ReportGenerator extends Block {
 					MethodDescription mDesc = it.next();
 
 					ClassDescription mainClassDesc = mDesc.getClassDescription();
-					Class mainClass = mainClassDesc.getClassObject();
+					Class<?> mainClass = mainClassDesc.getClassObject();
 					String type = mainClassDesc.getType();
 					String methodName = mDesc.getName();
 
@@ -421,7 +439,10 @@ public class ReportGenerator extends Block {
 							ClassDescription clDesc = iterator.next();
 							Class<?> prmClassType = clDesc.getClassObject();
 							paramTypes[index] = prmClassType;
-							String[] prmValues = iwc.getParameterValues(getParameterName(clDesc.getName()));
+
+							String param = getParameterName(clDesc.getName());
+							String[] prmValues = iwc.isParameterSet(param) ? iwc.getParameterValues(param) : getValues(param);
+
 							String prm = null;
 							Object obj = null;
 
@@ -456,10 +477,10 @@ public class ReportGenerator extends Block {
 							}
 
 							if (!isHidden) {
-								tmpReportDescriptionForCollectingData.put(this.prmLablePrefix + clDesc.getName(), clDesc.getLocalizedName(currentLocale) + ":");
+								tmpReportDescriptionForCollectingData.put(prmLablePrefix + clDesc.getName(), clDesc.getLocalizedName(currentLocale) + ":");
 							}
 							else {
-								tmpReportDescriptionForCollectingData.remove(this.prmLablePrefix + clDesc.getName());
+								tmpReportDescriptionForCollectingData.remove(prmLablePrefix + clDesc.getName());
 							}
 
 							prmVal[index] = obj;
@@ -468,13 +489,13 @@ public class ReportGenerator extends Block {
 
 					Object forInvocationOfMethod = null;
 					if (ClassDescription.VALUE_TYPE_IDO_SESSION_BEAN.equals(type)) {
-						forInvocationOfMethod = IBOLookup.getSessionInstance(iwc, mainClass);
+						forInvocationOfMethod = IBOLookup.getSessionInstance(iwc, (Class<? extends IBOSession>) mainClass);
 					}
 					else if (ClassDescription.VALUE_TYPE_IDO_SERVICE_BEAN.equals(type)) {
-						forInvocationOfMethod = IBOLookup.getServiceInstance(iwc, mainClass);
+						forInvocationOfMethod = IBOLookup.getServiceInstance(iwc, (Class<? extends IBOService>) mainClass);
 					}
 					else if (ClassDescription.VALUE_TYPE_IDO_ENTITY_HOME.equals(type)) {
-						forInvocationOfMethod = IDOLookup.getHome(mainClass);
+						forInvocationOfMethod = IDOLookup.getHome((Class<? extends IDOEntity>) mainClass);
 
 					}
 					else { // ClassDescription.VALUE_TYPE_CLASS.equals(type))
@@ -488,7 +509,7 @@ public class ReportGenerator extends Block {
 
 					if (this.runAsThread) {
 						Object threadPrmVal[] = new Object[prmVal.length + 6];
-						Class[] threadParamTypes = new Class[paramTypes.length + 6];
+						Class<?>[] threadParamTypes = new Class[paramTypes.length + 6];
 						int i = 0;
 						for (; i < prmVal.length; i++) {
 							threadPrmVal[i] = prmVal[i];
@@ -505,37 +526,32 @@ public class ReportGenerator extends Block {
 
 						//Hack, fix later
 						Group group = null;
-						Collection groups = null;
+						Collection<Group> groups = null;
 						String groupIDFilter = (String) prmVal[0];
 						String groupsRecursiveFilter = (String) prmVal[1];
 						Collection groupTypesFilter = (Collection) prmVal[2];
 
 						try {
 							if (groupIDFilter != null && !groupIDFilter.equals("")) {
-								groupIDFilter = groupIDFilter.substring(groupIDFilter
-										.lastIndexOf("_") + 1);
-								group = getGroupBusiness().getGroupByGroupID(
-										Integer.parseInt((groupIDFilter)));
+								groupIDFilter = groupIDFilter.substring(groupIDFilter.lastIndexOf("_") + 1);
+								group = getGroupBusiness().getGroupByGroupID(Integer.parseInt((groupIDFilter)));
 								if (group.isAlias()) {
 									group = group.getAlias();
 								}
 							}
 							if (group != null) {
-								if (groupsRecursiveFilter != null
-										&& groupsRecursiveFilter.equals("checked")) {
-									groups = getGroupBusiness()
-											.getChildGroupsRecursiveResultFiltered(group,
-													groupTypesFilter, true, true, true);
+								if (groupsRecursiveFilter != null && groupsRecursiveFilter.equals(CheckBoxInputHandler.CHECKED)) {
+									groups = getGroupBusiness().getChildGroupsRecursiveResultFiltered(group, groupTypesFilter, true, true, true);	//	TODO: improve
 								} else {
-									groups = new ArrayList();
+									groups = new ArrayList<Group>();
 								}
 								groups.add(group);
 
-								Iterator it2 = groups.iterator();
-								Collection viewGroups = new ArrayList();
+								Iterator<Group> it2 = groups.iterator();
+								Collection<Group> viewGroups = new ArrayList<Group>();
 								while (it2.hasNext()) {
-									Group g = (Group) it2.next();
-									if (hasViewPermission(iwc, iwc.getCurrentUser(), g))
+									Group g = it2.next();
+									if (hasViewPermission(iwc, iwc.getCurrentUser(), g))	//	TODO: improve
 										viewGroups.add(g);
 								}
 
@@ -544,7 +560,6 @@ public class ReportGenerator extends Block {
 						} catch (FinderException e) {
 							e.printStackTrace();
 						}
-
 
 						threadPrmVal[i] = groups;
 						threadParamTypes[i++] = Collection.class;;
@@ -587,15 +602,13 @@ public class ReportGenerator extends Block {
 					this.reportDescription.setLocale(iwc.getCurrentLocale());
 				}
 			}
-
 		}
 
 		return null;
 	}
 
 	private GroupBusiness getGroupBusiness() throws RemoteException {
-		return IBOLookup.getServiceInstance(
-					this.getIWApplicationContext(), GroupBusiness.class);
+		return IBOLookup.getServiceInstance(this.getIWApplicationContext(), GroupBusiness.class);
 	}
 
 	private boolean hasViewPermission(IWContext iwc, User user, Group group) {
@@ -786,6 +799,22 @@ public class ReportGenerator extends Block {
 		this.layoutICFilePK = layoutICFilePK;
 	}
 
+	private boolean reportState = false;
+
+	public boolean isReportState() {
+		return reportState;
+	}
+
+	public void setReportState(boolean reportState) {
+		this.reportState = reportState;
+	}
+
+	private String result = null;
+
+	public String getResult() {
+		return result;
+	}
+
 	@Override
 	public void main(IWContext iwc) throws Exception {
 		ReportGeneratorThread thread = new ReportGeneratorThread();
@@ -832,7 +861,9 @@ public class ReportGenerator extends Block {
 			}
 			else if ((this.methodInvocationPK != null) || (this.methodInvocationFileName != null)) {
 				String genState = iwc.getParameter(PRM_STATE);
-				if (genState == null || "".equals(genState)) {
+				boolean generateReport = isReportState();
+				generateReport = generateReport ? generateReport : !StringUtil.isEmpty(genState);
+				if (!generateReport) {
 					parseMethodInvocationXML(iwc, iwrb);
 					lineUpElements(iwrb, iwc);
 					Form submForm = new Form();
@@ -850,7 +881,7 @@ public class ReportGenerator extends Block {
 						parseMethodInvocationXML(iwc, iwrb);
 						ThreadRunDataSourceCollector collector = generateDataSource(iwc);
 
-						String tmpReportName = iwc.getParameter(getParameterName(this.PRM_REPORT_NAME));
+						String tmpReportName = iwc.isParameterSet(getParameterName(PRM_REPORT_NAME)) ? iwc.getParameter(getParameterName(PRM_REPORT_NAME)) : reportName;
 
 						thread.setDataSource(this.dataSource);
 						thread.setGenerateExcelReport(this.generateExcelReport);
@@ -875,7 +906,8 @@ public class ReportGenerator extends Block {
 
 						thread.start();
 
-						this.add(iwrb.getLocalizedString("report_generator.running_as_thread","This report is now running in the background. The result will be sent to you on the supplied email when it's done. Please don't re-run the report."));
+						result = iwrb.getLocalizedString("report_generator.running_as_thread","This report is now running in the background. The result will be sent to you on the supplied email when it's done. Please don't re-run the report.");
+						this.add(result);
 					} else {
 						getLogger().info("2 Parsing method invocation XML: start");
 						parseMethodInvocationXML(iwc, iwrb);
@@ -971,8 +1003,9 @@ public class ReportGenerator extends Block {
 
 			String realPath = this.methodInvocationIWBundle.getRealPathWithFileNameString(this.methodInvocationFileName);
 			try {
-				fileStream = new FileInputStream(realPath);
-			} catch (FileNotFoundException e) {
+				File tmp = new File(realPath);
+				fileStream = tmp.exists() && tmp.canRead() ? new FileInputStream(realPath) : null;
+			} catch (Exception e) {
 				e.printStackTrace();
 			}
 			if (fileStream == null) {
@@ -1065,12 +1098,12 @@ public class ReportGenerator extends Block {
 		// TODO Let Reportable field and ClassDescription impliment the same
 		// interface (IDODynamicReportableField) to decrease code duplications
 		if (this.queryPK != null) {
-			if (this.dynamicFields.size() > 0) {
+			if (this.reportableFields.size() > 0) {
 
-				Iterator iterator = this.dynamicFields.iterator();
+				Iterator<ReportableField> iterator = this.reportableFields.iterator();
 
 				while (iterator.hasNext()) {
-					ReportableField element = (ReportableField) iterator.next();
+					ReportableField element = iterator.next();
 					row++;
 					this.fieldTable.add(getFieldLabel(element.getLocalizedName(iwc.getCurrentLocale())) + ":", 1, row);
 					InterfaceObject input = getFieldInputObject(element.getName()); // null, element.getValueClass());
@@ -1240,7 +1273,8 @@ public class ReportGenerator extends Block {
 	public synchronized Object clone() {
 		ReportGenerator clone = (ReportGenerator) super.clone();
 
-		clone.dynamicFields = new ArrayList();
+		clone.reportableFields = new ArrayList<>();
+		clone.dynamicFields = new ArrayList<>();
 		clone.dataSource = null;
 		clone.design = null;
 		clone.reportFilePathsMap = null;
@@ -1292,6 +1326,8 @@ public class ReportGenerator extends Block {
 	}
 
 	private class ReportGeneratorException extends Exception {
+
+		private static final long serialVersionUID = 8761255223787885849L;
 
 		// jdk 1.3 - 1.4 fix
 		private Throwable _cause = this;
