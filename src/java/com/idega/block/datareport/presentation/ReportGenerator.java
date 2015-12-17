@@ -109,7 +109,7 @@ public class ReportGenerator extends Block {
 								STYLE_2 = "font-family:arial; font-size:8pt; color:#000000; text-align: justify;",
 
 								PRIFIX_PRM = "dr_",
-
+								
 								IW_BUNDLE_IDENTIFIER = "com.idega.block.datareport";
 
 	private static final String PRM_STATE = "dr_gen_state",
@@ -128,6 +128,10 @@ public class ReportGenerator extends Block {
 	private List<ClassDescription> dynamicFields = new ArrayList<ClassDescription>();
 	private List<ReportableField> reportableFields = new ArrayList<ReportableField>();
 	private Map<String, String> reportFilePathsMap = new HashMap<String, String>();
+	public Map<String, String> getReportFilePathsMap() {
+		return reportFilePathsMap;
+	}
+
 	private QueryHelper queryParser = null;
 	private JRDataSource dataSource = null;
 	private Table fieldTable = null;
@@ -388,7 +392,9 @@ public class ReportGenerator extends Block {
 		}
 
 	}
-
+	
+	private Object forInvocationOfMethod = null;
+	private Method method = null;
 	private Map<String, String[]> values = new HashMap<>();
 	private String[] getValues(String param) {
 		return values.get(param);
@@ -487,19 +493,21 @@ public class ReportGenerator extends Block {
 						}
 					}
 
-					Object forInvocationOfMethod = null;
-					if (ClassDescription.VALUE_TYPE_IDO_SESSION_BEAN.equals(type)) {
-						forInvocationOfMethod = IBOLookup.getSessionInstance(iwc, (Class<? extends IBOSession>) mainClass);
-					}
-					else if (ClassDescription.VALUE_TYPE_IDO_SERVICE_BEAN.equals(type)) {
-						forInvocationOfMethod = IBOLookup.getServiceInstance(iwc, (Class<? extends IBOService>) mainClass);
-					}
-					else if (ClassDescription.VALUE_TYPE_IDO_ENTITY_HOME.equals(type)) {
-						forInvocationOfMethod = IDOLookup.getHome((Class<? extends IDOEntity>) mainClass);
-
-					}
-					else { // ClassDescription.VALUE_TYPE_CLASS.equals(type))
-						forInvocationOfMethod = mainClass.newInstance();
+					Object forInvocationOfMethod = this.forInvocationOfMethod == null ? null : this.forInvocationOfMethod;
+					if (forInvocationOfMethod == null) {
+						if (ClassDescription.VALUE_TYPE_IDO_SESSION_BEAN.equals(type)) {
+							forInvocationOfMethod = IBOLookup.getSessionInstance(iwc, (Class<? extends IBOSession>) mainClass);
+						}
+						else if (ClassDescription.VALUE_TYPE_IDO_SERVICE_BEAN.equals(type)) {
+							forInvocationOfMethod = IBOLookup.getServiceInstance(iwc, (Class<? extends IBOService>) mainClass);
+						}
+						else if (ClassDescription.VALUE_TYPE_IDO_ENTITY_HOME.equals(type)) {
+							forInvocationOfMethod = IDOLookup.getHome((Class<? extends IDOEntity>) mainClass);
+	
+						}
+						else { // ClassDescription.VALUE_TYPE_CLASS.equals(type))
+							forInvocationOfMethod = mainClass.newInstance();
+						}
 					}
 
 					MethodFinder mf = MethodFinder.getInstance();
@@ -576,7 +584,7 @@ public class ReportGenerator extends Block {
 
 						return ret;
 					} else {
-						method = mf.getMethodWithNameAndParameters(mainClass, methodName, paramTypes);
+						method = this.method == null ? mf.getMethodWithNameAndParameters(mainClass, methodName, paramTypes) : this.method;
 					}
 
 					try {
@@ -1375,6 +1383,22 @@ public class ReportGenerator extends Block {
 			return this._localizedMessage;
 		}
 
+	}
+
+	public Object getForInvocationOfMethod() {
+		return forInvocationOfMethod;
+	}
+
+	public void setForInvocationOfMethod(Object forInvocationOfMethod) {
+		this.forInvocationOfMethod = forInvocationOfMethod;
+	}
+
+	public Method getMethod() {
+		return method;
+	}
+
+	public void setMethod(Method method) {
+		this.method = method;
 	}
 
 }
