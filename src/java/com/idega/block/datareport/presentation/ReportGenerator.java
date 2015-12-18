@@ -152,6 +152,8 @@ public class ReportGenerator extends Block {
 	private boolean generateHTMLReport = true;
 	private boolean generatePDFReport = true;
 	private boolean generateSimpleExcelReport = true;
+	
+	private boolean generateStatistics = false;
 
 	private boolean runAsThread = false;
 	private String email = null;
@@ -515,7 +517,7 @@ public class ReportGenerator extends Block {
 
 					Method method = null;
 
-					if (this.runAsThread) {
+					if ((this.runAsThread) && !isGenerateStatistics()) {
 						Object threadPrmVal[] = new Object[prmVal.length + 6];
 						Class<?>[] threadParamTypes = new Class[paramTypes.length + 6];
 						int i = 0;
@@ -584,7 +586,18 @@ public class ReportGenerator extends Block {
 
 						return ret;
 					} else {
-						method = this.method == null ? mf.getMethodWithNameAndParameters(mainClass, methodName, paramTypes) : this.method;
+						if (this.runAsThread){
+							method = this.method == null ? mf.getMethodWithNameAndParameters(mainClass, methodName, paramTypes) : this.method;	
+							ThreadRunDataSourceCollector ret = new ThreadRunDataSourceCollector();
+							ret.setMethod(method);
+							ret.setDescription(tmpReportDescriptionForCollectingData);
+							ret.setForInvocationOfMethod(forInvocationOfMethod);
+							ret.setPrmVal(prmVal);
+							return ret;
+						}
+						else {
+							method = this.method == null ? mf.getMethodWithNameAndParameters(mainClass, methodName, paramTypes) : this.method;							
+						}
 					}
 
 					try {
@@ -1399,6 +1412,14 @@ public class ReportGenerator extends Block {
 
 	public void setMethod(Method method) {
 		this.method = method;
+	}
+
+	public boolean isGenerateStatistics() {
+		return generateStatistics;
+	}
+
+	public void setGenerateStatistics(boolean generateStatistics) {
+		this.generateStatistics = generateStatistics;
 	}
 
 }
