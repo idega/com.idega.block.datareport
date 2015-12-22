@@ -9,6 +9,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.Serializable;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.rmi.RemoteException;
@@ -80,6 +81,7 @@ import com.idega.user.data.Group;
 import com.idega.user.data.User;
 import com.idega.util.IWTimestamp;
 import com.idega.util.StringUtil;
+import com.idega.util.datastructures.map.MapUtil;
 import com.idega.util.reflect.MethodFinder;
 import com.idega.xml.XMLException;
 
@@ -109,7 +111,7 @@ public class ReportGenerator extends Block {
 								STYLE_2 = "font-family:arial; font-size:8pt; color:#000000; text-align: justify;",
 
 								PRIFIX_PRM = "dr_",
-								
+
 								IW_BUNDLE_IDENTIFIER = "com.idega.block.datareport";
 
 	private static final String PRM_STATE = "dr_gen_state",
@@ -152,7 +154,7 @@ public class ReportGenerator extends Block {
 	private boolean generateHTMLReport = true;
 	private boolean generatePDFReport = true;
 	private boolean generateSimpleExcelReport = true;
-	
+
 	private boolean generateStatistics = false;
 
 	private boolean runAsThread = false;
@@ -394,7 +396,7 @@ public class ReportGenerator extends Block {
 		}
 
 	}
-	
+
 	private Object forInvocationOfMethod = null;
 	private Method method = null;
 	private Map<String, String[]> values = new HashMap<>();
@@ -505,7 +507,7 @@ public class ReportGenerator extends Block {
 						}
 						else if (ClassDescription.VALUE_TYPE_IDO_ENTITY_HOME.equals(type)) {
 							forInvocationOfMethod = IDOLookup.getHome((Class<? extends IDOEntity>) mainClass);
-	
+
 						}
 						else { // ClassDescription.VALUE_TYPE_CLASS.equals(type))
 							forInvocationOfMethod = mainClass.newInstance();
@@ -587,7 +589,7 @@ public class ReportGenerator extends Block {
 						return ret;
 					} else {
 						if (this.runAsThread){
-							method = this.method == null ? mf.getMethodWithNameAndParameters(mainClass, methodName, paramTypes) : this.method;	
+							method = this.method == null ? mf.getMethodWithNameAndParameters(mainClass, methodName, paramTypes) : this.method;
 							ThreadRunDataSourceCollector ret = new ThreadRunDataSourceCollector();
 							ret.setMethod(method);
 							ret.setDescription(tmpReportDescriptionForCollectingData);
@@ -596,7 +598,7 @@ public class ReportGenerator extends Block {
 							return ret;
 						}
 						else {
-							method = this.method == null ? mf.getMethodWithNameAndParameters(mainClass, methodName, paramTypes) : this.method;							
+							method = this.method == null ? mf.getMethodWithNameAndParameters(mainClass, methodName, paramTypes) : this.method;
 						}
 					}
 
@@ -832,7 +834,14 @@ public class ReportGenerator extends Block {
 
 	private String result = null;
 
-	public String getResult() {
+	@SuppressWarnings("unchecked")
+	public <V extends Serializable> V getResult() {
+		V result = (V) this.result;
+		if (MapUtil.isEmpty(getReportFilePathsMap())) {
+			return result;
+		}
+
+		result = (V) getReportFilePathsMap();
 		return result;
 	}
 
