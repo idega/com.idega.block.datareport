@@ -45,7 +45,17 @@
     <dependency>
       <groupId>com.idega.block.platform</groupId>
       <artifactId>com.idega.core</artifactId>
-     </dependency>
+      <exclusions>
+      	<exclusion>
+      		<artifactId>poi</artifactId>
+      		<groupId>org.apache.poi</groupId>
+      	</exclusion>
+      	<exclusion>
+      		<artifactId>poi-ooxml</artifactId>
+      		<groupId>org.apache.poi</groupId>
+      	</exclusion>
+      </exclusions>
+    </dependency>
     <dependency>
       <groupId>com.idega.block.platform</groupId>
       <artifactId>com.idega.user</artifactId>
