@@ -77,11 +77,14 @@ import com.idega.presentation.ui.SubmitButton;
 import com.idega.presentation.ui.TextInput;
 import com.idega.servlet.filter.IWBundleResourceFilter;
 import com.idega.user.business.GroupBusiness;
+import com.idega.user.dao.GroupDAO;
 import com.idega.user.data.Group;
 import com.idega.user.data.User;
 import com.idega.util.IWTimestamp;
+import com.idega.util.ListUtil;
 import com.idega.util.StringUtil;
 import com.idega.util.datastructures.map.MapUtil;
+import com.idega.util.expression.ELUtil;
 import com.idega.util.reflect.MethodFinder;
 import com.idega.xml.XMLException;
 
@@ -159,6 +162,8 @@ public class ReportGenerator extends Block {
 
 	private boolean runAsThread = false;
 	private String email = null;
+
+	private List<Integer> groupsIds = null;
 
 	/**
 	 *
@@ -538,10 +543,10 @@ public class ReportGenerator extends Block {
 
 						//Hack, fix later
 						Group group = null;
-						Collection<Group> groups = null;
+						List<Group> groups = null;
 						String groupIDFilter = (String) prmVal[0];
 						String groupsRecursiveFilter = (String) prmVal[1];
-						Collection groupTypesFilter = (Collection) prmVal[2];
+						Collection<String> groupTypesFilter = (Collection) prmVal[2];
 
 						try {
 							if (groupIDFilter != null && !groupIDFilter.equals("")) {
@@ -552,20 +557,61 @@ public class ReportGenerator extends Block {
 								}
 							}
 							if (group != null) {
-								if (groupsRecursiveFilter != null && groupsRecursiveFilter.equals(CheckBoxInputHandler.CHECKED)) {
-									groups = getGroupBusiness().getChildGroupsRecursiveResultFiltered(group, groupTypesFilter, true, true, true);	//	TODO: improve
+								boolean loadChildGroups = groupsRecursiveFilter != null && groupsRecursiveFilter.equals(CheckBoxInputHandler.CHECKED);
+								if (!ListUtil.isEmpty(groupsIds)) {
+									Map<Integer, Boolean> tmpGroups = new HashMap<>();
+									GroupDAO groupDAO = ELUtil.getInstance().getBean(GroupDAO.class);
+									Map<Integer, List<Integer>> allChildGroupsIds = groupDAO.getChildGroupsIds(groupsIds, groupTypesFilter == null ? null : new ArrayList<String>(groupTypesFilter), true);
+									if (!MapUtil.isEmpty(allChildGroupsIds)) {
+										for (List<Integer> childGroupsIds: allChildGroupsIds.values()) {
+											if (ListUtil.isEmpty(childGroupsIds)) {
+												continue;
+											}
+
+											for (Integer id: childGroupsIds) {
+												if (!tmpGroups.containsKey(id)) {
+													tmpGroups.put(id, Boolean.TRUE);
+												}
+											}
+										}
+									}
+
+									groups = new ArrayList<Group>();
+									if (!MapUtil.isEmpty(tmpGroups)) {
+										Collection<String> tmp = new ArrayList<>();
+										for (Integer id: tmpGroups.keySet()) {
+											tmp.add(String.valueOf(id));
+										}
+										Collection<Group> groupsByIds = getGroupBusiness().getGroups(tmp);
+										if (!ListUtil.isEmpty(groupsByIds)) {
+											for (Group groupById: groupsByIds) {
+												groups.add(groupById);
+											}
+										}
+									}
 								} else {
 									groups = new ArrayList<Group>();
+									if (loadChildGroups) {
+										Collection<Group> childGroups = getGroupBusiness().getChildGroupsRecursiveResultFiltered(group, groupTypesFilter, true, true, true);	//	TODO: improve
+										if (childGroups != null) {
+											groups.addAll(childGroups);
+										}
+									}
 								}
 								groups.add(group);
 
-								Iterator<Group> it2 = groups.iterator();
-								Collection<Group> viewGroups = new ArrayList<Group>();
-								while (it2.hasNext()) {
-									Group g = it2.next();
-									if (hasViewPermission(iwc, iwc.getCurrentUser(), g))	//	TODO: improve
+								User currentUser = iwc.getCurrentUser();
+								List<Group> viewGroups = new ArrayList<Group>();
+								for (Group g: groups) {
+									if (hasViewPermission(iwc, currentUser, g))	{//	TODO: improve
 										viewGroups.add(g);
+									}
 								}
+//								groups.parallelStream().forEach(g -> {
+//									if (hasViewPermission(iwc, currentUser, g)) {	//	TODO: improve
+//										viewGroups.add(g);
+//									}
+//								});
 
 								groups = viewGroups;
 							}
@@ -650,18 +696,14 @@ public class ReportGenerator extends Block {
 				if (group.getAlias() != null) {// thats the real group
 					hasOwnerPermissionForRealGroup = accessController.isOwnerLegacy(group.getAlias(), iwc);
 					if (!hasOwnerPermissionForRealGroup) {
-						hasViewPermissionForRealGroup = accessController
-								.hasViewPermissionFor(group.getAlias(),
-										iwc);
+						hasViewPermissionForRealGroup = accessController.hasViewPermissionFor(group.getAlias(), iwc);
 						//hasEditPermissionForRealGroup = accessController
 						//		.hasEditPermissionFor(group.getAlias(),
 						//				this.getUserContext());
 						//hasDeletePermissionForRealGroup = accessController
 						//		.hasDeletePermissionFor(group.getAlias(),
 						//				this.getUserContext());
-						hasPermitPermissionForRealGroup = accessController
-								.hasPermitPermissionFor(group.getAlias(),
-										iwc);
+						hasPermitPermissionForRealGroup = accessController.hasPermitPermissionFor(group.getAlias(), iwc);
 					} else {
 						// the user is the owner so he can do anything
 						hasViewPermissionForRealGroup = true;
@@ -672,18 +714,14 @@ public class ReportGenerator extends Block {
 				} else if (group != null) {
 					hasOwnerPermissionForRealGroup = accessController.isOwnerLegacy(group, iwc);
 					if (!hasOwnerPermissionForRealGroup) {
-						hasViewPermissionForRealGroup = accessController
-								.hasViewPermissionFor(group,
-										iwc);
+						hasViewPermissionForRealGroup = accessController.hasViewPermissionFor(group, iwc);
 						//hasEditPermissionForRealGroup = accessController
 						//		.hasEditPermissionFor(group,
 						//				this.getUserContext());
 						//hasDeletePermissionForRealGroup = accessController
 						//		.hasDeletePermissionFor(group,
 						//				this.getUserContext());
-						hasPermitPermissionForRealGroup = accessController
-								.hasPermitPermissionFor(group,
-										iwc);
+						hasPermitPermissionForRealGroup = accessController.hasPermitPermissionFor(group, iwc);
 					} else {
 						// the user is the owner so he can do anything
 						hasViewPermissionForRealGroup = true;
@@ -1429,6 +1467,14 @@ public class ReportGenerator extends Block {
 
 	public void setGenerateStatistics(boolean generateStatistics) {
 		this.generateStatistics = generateStatistics;
+	}
+
+	public List<Integer> getGroupsIds() {
+		return groupsIds;
+	}
+
+	public void setGroupsIds(List<Integer> groupsIds) {
+		this.groupsIds = groupsIds;
 	}
 
 }
