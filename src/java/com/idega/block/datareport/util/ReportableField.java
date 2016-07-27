@@ -10,11 +10,11 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 
-import net.sf.jasperreports.engine.JRField;
-
 import com.idega.data.EntityAttribute;
 import com.idega.data.IDOEntityField;
 import com.idega.data.IDOReportableField;
+
+import net.sf.jasperreports.engine.JRField;
 
 /**
  * Title:		ReportableField
@@ -30,11 +30,13 @@ public class ReportableField implements IDOReportableField, JRField {
 	private static final int CONTAINED_FIELD_TYPE_IDOFIELD = 0;
 	private static final int CONTAINED_FIELD_TYPE_JRFIELD = 1;
 	private static final int CONTAINED_FIELD_TYPE_NONE = 2;
+
 	private Map<Locale, String> _localizedNames = new HashMap<Locale, String>();
 
 	private JRField _jrField = null;
 	private IDOEntityField _idoField = null;
 	private String _customMadeFiledName = null;
+
 	private Class<?> _customMadeValueClass = null;
 
 	private int _fieldsMaxNumberOfCharacters = 15;
@@ -46,7 +48,6 @@ public class ReportableField implements IDOReportableField, JRField {
 		this._jrField=field;
 		this._typeOfContainedField = CONTAINED_FIELD_TYPE_JRFIELD;
 	}
-
 
 	public ReportableField(String name, Class<?> valueClass) {
 		this._customMadeFiledName = name;
@@ -175,38 +176,9 @@ public class ReportableField implements IDOReportableField, JRField {
 		this._fieldsMaxNumberOfCharacters = number;
 	}
 
-
-//	@Override
-//	public JRPropertiesHolder getParentProperties() {
-//		// TODO Auto-generated method stub
-//		return null;
-//	}
-//
-//
-//	@Override
-//	public JRPropertiesMap getPropertiesMap() {
-//		// TODO Auto-generated method stub
-//		return null;
-//	}
-//
-//
-//	@Override
-//	public boolean hasProperties() {
-//		// TODO Auto-generated method stub
-//		return false;
-//	}
-//
-//
-//	@Override
-//	public Object clone() {
-//		// TODO Auto-generated method stub
-//		try {
-//			return super.clone();
-//		} catch (CloneNotSupportedException e) {
-//			// TODO Auto-generated catch block
-//			e.printStackTrace();
-//		}
-//		return null;
-//	}
+	@Override
+	public String toString() {
+		return "Field name: " + getName();
+	}
 
 }

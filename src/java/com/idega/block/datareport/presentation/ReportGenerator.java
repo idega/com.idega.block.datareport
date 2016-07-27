@@ -60,7 +60,6 @@ import com.idega.data.IDOEntity;
 import com.idega.data.IDOLookup;
 import com.idega.data.IDOLookupException;
 import com.idega.idegaweb.IWBundle;
-import com.idega.idegaweb.IWMainApplication;
 import com.idega.idegaweb.IWResourceBundle;
 import com.idega.presentation.Block;
 import com.idega.presentation.IWContext;
@@ -130,13 +129,13 @@ public class ReportGenerator extends Block {
 	private IWBundle methodInvocationIWBundle = null;
 
 	private MethodInvocationDocument methodInvokeDoc = null;
+
 	private List<ClassDescription> dynamicFields = new ArrayList<ClassDescription>();
 	private List<ReportableField> reportableFields = new ArrayList<ReportableField>();
 	private Map<String, String> reportFilePathsMap = new HashMap<String, String>();
 	public Map<String, String> getReportFilePathsMap() {
 		return reportFilePathsMap;
 	}
-
 	private QueryHelper queryParser = null;
 	private JRDataSource dataSource = null;
 	private Table fieldTable = null;
@@ -735,63 +734,70 @@ public class ReportGenerator extends Block {
 			e.printStackTrace();
 		}
 
-		return hasViewPermissionForRealGroup || hasPermitPermissionForRealGroup;
+		boolean result = hasViewPermissionForRealGroup || hasPermitPermissionForRealGroup;
+		if (!result) {
+			return iwc.getIWMainApplication().getSettings().getBoolean("report_generator.always_have_permission", false);
+		}
+		return result;
 	}
 
 
 	private void generateReport() throws RemoteException, JRException {
 		if (this.dataSource == null) {
-			getLogger().warning("Datasource is not provided!");
+			getLogger().warning("Data source is unknown, can not generate report");
 			return;
 		}
 
 		JasperReportBusiness business = getReportBusiness();
 		if (doGenerateSomeJasperReport() && (this.dataSource != null && this.design != null)) {
-			getLogger().info("Using datasource " + dataSource + " and design: " + design);
 			this.reportDescription.put(DynamicReportDesign.PRM_REPORT_NAME, this.reportName);
 			JasperPrint print = business.getReport(this.dataSource, this.reportDescription.getDisplayValueMap(), this.design);
-			getLogger().info("Got print: " + print);
 
 			if (this.reportFilePathsMap == null) {
 				this.reportFilePathsMap = new HashMap<String, String>();
 			}
 
-			if (this.generateHTMLReport) {
-				getLogger().info("Fetching HTML report for " + reportName + " from print " + print);
-				String html = business.getHtmlReport(print, "report");
-				getLogger().info("HTML report (" + reportName + "): " + html);
-				this.reportFilePathsMap.put(HTML_FORMAT, html);
+			if (this.generatePDFReport) {
+				try {
+					this.reportFilePathsMap.put(PDF_FORMAT, business.getPdfReport(print, "report"));
+				} catch (Throwable e) {
+					getLogger().log(Level.WARNING, "Error generating PDF report: " + print, e);
+				}
 			}
 
-			if (this.generatePDFReport) {
-				getLogger().info("Fetching PDF report for " + reportName + " from print " + print);
-				String pdf = business.getPdfReport(print, "report");
-				getLogger().info("PDF report (" + reportName + "): " + pdf);
-				this.reportFilePathsMap.put(PDF_FORMAT, pdf);
+			if (this.generateExcelReport) {
+				try {
+					this.reportFilePathsMap.put(EXCEL_FORMAT, business.getExcelReport(print, "report"));
+				} catch (Throwable e) {
+					getLogger().log(Level.WARNING, "Error generating Excel report: " + print, e);
+				}
+			}
+
+			if (this.generateHTMLReport) {
+				try {
+					this.reportFilePathsMap.put(HTML_FORMAT, business.getHtmlReport(print, "report"));
+				} catch (Throwable e) {
+					getLogger().log(Level.WARNING, "Error generating HTML report: " + print, e);
+				}
 			}
 
 			if (this.generateXMLReport) {
-				getLogger().info("Fetching XML report for " + reportName + " from print " + print);
-				String xml = business.getXmlReport(print, "report");
-				getLogger().info("XML report (" + reportName + "): " + xml);
-				this.reportFilePathsMap.put(XML_FORMAT, xml);
-			}
-
-			if (this.generateExcelReport &&
-					(IWMainApplication.getDefaultIWMainApplication().getSettings().getBoolean("data_report.always_generate_excel", false) ||
-					!(this.generateSimpleExcelReport && (this.dataSource instanceof ReportableCollection)))
-			) {
-				getLogger().info("Fetching Excel report for " + reportName + " from print " + print);
-				String excel = business.getExcelReport(print, "report");
-				getLogger().info("Excel report (" + reportName + "): " + excel);
-				this.reportFilePathsMap.put(EXCEL_FORMAT, excel);
+				try {
+					this.reportFilePathsMap.put(XML_FORMAT, business.getXmlReport(print, "report"));
+				} catch (Throwable e) {
+					getLogger().log(Level.WARNING, "Error generating XML report: " + print, e);
+				}
 			}
 		}
 
 		if (this.generateSimpleExcelReport && (this.dataSource instanceof ReportableCollection)) {
-			getLogger().info("Using simple Excel format");
 			if (this.reportFilePathsMap == null) {
 				this.reportFilePathsMap = new HashMap<String, String>();
+			}
+			try {
+				this.reportFilePathsMap.put(SIMPLE_EXCEL_FORMAT, business.getSimpleExcelReport(((ReportableCollection) this.dataSource).getJRDataSource(), this.reportName, this.reportDescription));
+			} catch (Throwable e) {
+				getLogger().log(Level.WARNING, "Error generating simple Excel report: " + dataSource, e);
 			}
 			this.reportFilePathsMap.put(SIMPLE_EXCEL_FORMAT, business.getSimpleExcelReport(((ReportableCollection) this.dataSource).getJRDataSource(), this.reportName, this.reportDescription));
 		}
@@ -1001,8 +1007,9 @@ public class ReportGenerator extends Block {
 
 							this.add(getReportLink(iwc));
 						} catch (Exception e) {
-							this.add(iwrb.getLocalizedString("report_generator.error_generating_report","Error generating report"));
-							getLogger().log(Level.WARNING, "Error generating report: " + reportName, e);
+							this.add(iwrb.getLocalizedString("report_generator.error_generating_report", "Error generating report"));
+
+							getLogger().log(Level.WARNING, "Error generating report", e);
 						}
 					}
 
@@ -1010,9 +1017,13 @@ public class ReportGenerator extends Block {
 			}
 			else if (hasEditPermission()) {
 				add(iwrb.getLocalizedString("no_query_has_been_chosen_for_this_instance", "No query has been chosen for this instance"));
-			} // else{//Do nothing}
+			} else {
+				getLogger().warning("Not doing anything");
+			}
 		}
 		catch (OutOfMemoryError e) {
+			getLogger().log(Level.WARNING, e.getMessage(), e);
+
 			add(iwrb.getLocalizedString("datareport.out_of_memory", "The server was not able to finish your request. Try to be more specific in your request or partition it so the result will be smaller."));
 			add(Text.getBreak());
 			add(Text.getBreak());
@@ -1024,6 +1035,8 @@ public class ReportGenerator extends Block {
 			getLogger().log(Level.WARNING, "Error generating report: " + reportName, e);
 		}
 		catch (ReportGeneratorException e) {
+			getLogger().log(Level.WARNING, e.getMessage(), e);
+
 			add(e.getLocalizedMessage());
 			add(Text.getBreak());
 			add(Text.getBreak());
@@ -1122,8 +1135,20 @@ public class ReportGenerator extends Block {
 		reports.mergeCells(1, 1, 2, 1);
 		reports.add(getResourceBundle(iwc).getLocalizedString("ReportGenerator.click_on_format", "Select a link for the desired output format."), 1, 1);
 
-		String formats[] = new String[] { EXCEL_FORMAT, SIMPLE_EXCEL_FORMAT, PDF_FORMAT, XML_FORMAT, HTML_FORMAT };
-		String formatNames[] = new String[] { iwrb.getLocalizedString(EXCEL_FORMAT, "Excel"), iwrb.getLocalizedString(SIMPLE_EXCEL_FORMAT, "Excel without template"), iwrb.getLocalizedString(PDF_FORMAT, "PDF"), iwrb.getLocalizedString(XML_FORMAT, "XML"), iwrb.getLocalizedString(HTML_FORMAT, "HTML") };
+		String formats[] = new String[] {
+				EXCEL_FORMAT,
+				SIMPLE_EXCEL_FORMAT,
+				PDF_FORMAT,
+				XML_FORMAT,
+				HTML_FORMAT
+		};
+		String formatNames[] = new String[] {
+				iwrb.getLocalizedString(EXCEL_FORMAT, "Excel"),
+				iwrb.getLocalizedString(SIMPLE_EXCEL_FORMAT, "Excel without template"),
+				iwrb.getLocalizedString(PDF_FORMAT, "PDF"),
+				iwrb.getLocalizedString(XML_FORMAT, "XML"),
+				iwrb.getLocalizedString(HTML_FORMAT, "HTML")
+		};
 
 		int j = 1;
 		for (int i = 0; i < formats.length; i++) {
@@ -1139,6 +1164,7 @@ public class ReportGenerator extends Block {
 				reports.add(link, 2, j);
 			}
 		}
+
 		return reports;
 	}
 

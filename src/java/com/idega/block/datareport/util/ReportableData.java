@@ -31,7 +31,6 @@ public class ReportableData implements IDOReportableEntity{
 		super();
 	}
 
-
 	public void addData(IDOReportableField key, Object data){
 		this._data.put(key.getName(),data);
 	}
