@@ -30,6 +30,11 @@ import java.util.logging.Level;
 
 import javax.ejb.FinderException;
 
+import net.sf.jasperreports.engine.JRDataSource;
+import net.sf.jasperreports.engine.JRException;
+import net.sf.jasperreports.engine.JasperPrint;
+import net.sf.jasperreports.engine.design.JasperDesign;
+
 import com.idega.block.dataquery.business.QueryService;
 import com.idega.block.dataquery.data.Query;
 import com.idega.block.dataquery.data.QueryHome;
@@ -57,6 +62,7 @@ import com.idega.core.file.data.ICFile;
 import com.idega.data.IDOLookup;
 import com.idega.data.IDOLookupException;
 import com.idega.idegaweb.IWBundle;
+import com.idega.idegaweb.IWMainApplication;
 import com.idega.idegaweb.IWResourceBundle;
 import com.idega.presentation.Block;
 import com.idega.presentation.IWContext;
@@ -76,11 +82,6 @@ import com.idega.user.data.User;
 import com.idega.util.IWTimestamp;
 import com.idega.util.reflect.MethodFinder;
 import com.idega.xml.XMLException;
-
-import net.sf.jasperreports.engine.JRDataSource;
-import net.sf.jasperreports.engine.JRException;
-import net.sf.jasperreports.engine.JasperPrint;
-import net.sf.jasperreports.engine.design.JasperDesign;
 
 /**
  * Title: ReportGenerator Description: Copyright: Copyright (c) 2003 Company: idega Software
@@ -766,8 +767,16 @@ public class ReportGenerator extends Block {
 		this.methodInvocationIWBundle = bundle;
 	}
 
+	public void setMethodInvocationBundleAndFileName(
+			String bundle,
+			String fileName) {
+		setMethodInvocationBundleAndFileName(
+				IWMainApplication.getDefaultIWMainApplication().getBundle(bundle),
+				fileName);
+	}
+
 	public void setMethodInvocationFileNameAndUseDefaultBundle(String fileName) {
-		setMethodInvocationBundleAndFileName(null, fileName);
+		setMethodInvocationBundleAndFileName((IWBundle) null, fileName);
 	}
 
 	public void setLayoutICFile(ICFile file) {
