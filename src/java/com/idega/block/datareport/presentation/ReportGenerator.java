@@ -790,8 +790,14 @@ public class ReportGenerator extends Block {
 		this.layoutIWBundle = bundle;
 	}
 
+	public void setLayoutBundleAndFileName(String bundle, String fileName) {
+		setLayoutBundleAndFileName(
+				IWMainApplication.getDefaultIWMainApplication().getBundle(bundle), 
+				fileName);
+	}
+	
 	public void setLayoutFileNameAndUseDefaultBundle(String fileName) {
-		setLayoutBundleAndFileName(null, fileName);
+		setLayoutBundleAndFileName((IWBundle) null, fileName);
 	}
 
 	public void setLayoutICFileID(Integer layoutICFilePK) {
