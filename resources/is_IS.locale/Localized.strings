@@ -7,3 +7,4 @@ no_query_has_been_chosen_for_this_instance=Hluturinn er \u00F3stilltur, fari\u00
 report_generator.error_generating_report=Villa kom upp vi\u00F0 a\u00F0 \u00FAtb\u00FAa sk\u00FDrslu
 report_name=\u00DAtb\u00FAin sk\u00FDrsla
 simple_excel=Excel (\u00E1n sni\u00F0m\u00E1ts)
+report_generator.running_as_thread=Verið er að vinna við gerð skýrslu og mun hún verða send á netfang sem skráð var inn hér á undan. Ekki er þörf á að keyra hana aftur​.
