@@ -30,11 +30,6 @@ import java.util.logging.Level;
 
 import javax.ejb.FinderException;
 
-import net.sf.jasperreports.engine.JRDataSource;
-import net.sf.jasperreports.engine.JRException;
-import net.sf.jasperreports.engine.JasperPrint;
-import net.sf.jasperreports.engine.design.JasperDesign;
-
 import com.idega.block.dataquery.business.QueryService;
 import com.idega.block.dataquery.data.Query;
 import com.idega.block.dataquery.data.QueryHome;
@@ -92,6 +87,11 @@ import com.idega.util.datastructures.map.MapUtil;
 import com.idega.util.expression.ELUtil;
 import com.idega.util.reflect.MethodFinder;
 import com.idega.xml.XMLException;
+
+import net.sf.jasperreports.engine.JRDataSource;
+import net.sf.jasperreports.engine.JRException;
+import net.sf.jasperreports.engine.JasperPrint;
+import net.sf.jasperreports.engine.design.JasperDesign;
 
 /**
  * Title: ReportGenerator Description: Copyright: Copyright (c) 2003 Company: idega Software
@@ -164,6 +164,8 @@ public class ReportGenerator extends Block {
 	private String email = null;
 
 	private List<Integer> groupsIds = null;
+
+	private List<Group> fullGroups = null;
 
 	/**
 	 *
@@ -556,9 +558,15 @@ public class ReportGenerator extends Block {
 									group = group.getAlias();
 								}
 							}
+							boolean checkGroupsForUserPermissions = true;
+							boolean addTopGroup = true;
 							if (group != null) {
 								boolean loadChildGroups = groupsRecursiveFilter != null && groupsRecursiveFilter.equals(CheckBoxInputHandler.CHECKED);
-								if (!ListUtil.isEmpty(groupsIds)) {
+								if (!ListUtil.isEmpty(fullGroups)) {
+									groups = fullGroups;
+									checkGroupsForUserPermissions = false;
+									addTopGroup = false;
+								} else if (!ListUtil.isEmpty(groupsIds)) {
 									Map<Integer, Boolean> tmpGroups = new HashMap<>();
 									GroupDAO groupDAO = ELUtil.getInstance().getBean(GroupDAO.class);
 									Map<Integer, List<Integer>> allChildGroupsIds = groupDAO.getChildGroupsIds(groupsIds, groupTypesFilter == null ? null : new ArrayList<String>(groupTypesFilter), true);
@@ -598,22 +606,27 @@ public class ReportGenerator extends Block {
 										}
 									}
 								}
-								groups.add(group);
 
-								User currentUser = iwc.getCurrentUser();
-								List<Group> viewGroups = new ArrayList<Group>();
-								for (Group g: groups) {
-									if (hasViewPermission(iwc, currentUser, g))	{//	TODO: improve
-										viewGroups.add(g);
-									}
+								if (addTopGroup) {
+									groups.add(group);
 								}
-//								groups.parallelStream().forEach(g -> {
-//									if (hasViewPermission(iwc, currentUser, g)) {	//	TODO: improve
-//										viewGroups.add(g);
-//									}
-//								});
 
-								groups = viewGroups;
+								if (checkGroupsForUserPermissions) {
+									User currentUser = iwc.getCurrentUser();
+									List<Group> viewGroups = new ArrayList<Group>();
+									for (Group g: groups) {
+										if (hasViewPermission(iwc, currentUser, g))	{//	TODO: improve
+											viewGroups.add(g);
+										}
+									}
+//									groups.parallelStream().forEach(g -> {
+//										if (hasViewPermission(iwc, currentUser, g)) {	//	TODO: improve
+//											viewGroups.add(g);
+//										}
+//									});
+
+									groups = viewGroups;
+								}
 							}
 						} catch (FinderException e) {
 							e.printStackTrace();
@@ -869,10 +882,10 @@ public class ReportGenerator extends Block {
 
 	public void setLayoutBundleAndFileName(String bundle, String fileName) {
 		setLayoutBundleAndFileName(
-				IWMainApplication.getDefaultIWMainApplication().getBundle(bundle), 
+				IWMainApplication.getDefaultIWMainApplication().getBundle(bundle),
 				fileName);
 	}
-	
+
 	public void setLayoutFileNameAndUseDefaultBundle(String fileName) {
 		setLayoutBundleAndFileName((IWBundle) null, fileName);
 	}
@@ -1517,5 +1530,15 @@ public class ReportGenerator extends Block {
 	public void setGroupsIds(List<Integer> groupsIds) {
 		this.groupsIds = groupsIds;
 	}
+
+	public List<Group> getFullGroups() {
+		return fullGroups;
+	}
+
+	public void setFullGroups(List<Group> fullGroups) {
+		this.fullGroups = fullGroups;
+	}
+
+
 
 }
