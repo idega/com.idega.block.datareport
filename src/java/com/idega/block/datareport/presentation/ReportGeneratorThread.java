@@ -11,11 +11,6 @@ import java.util.Locale;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import net.sf.jasperreports.engine.JRDataSource;
-import net.sf.jasperreports.engine.JRException;
-import net.sf.jasperreports.engine.JasperPrint;
-import net.sf.jasperreports.engine.design.JasperDesign;
-
 import com.idega.block.dataquery.data.xml.QueryFieldPart;
 import com.idega.block.datareport.business.DynamicReportDesign;
 import com.idega.block.datareport.business.JasperReportBusiness;
@@ -32,6 +27,11 @@ import com.idega.idegaweb.IWBundle;
 import com.idega.idegaweb.IWMainApplication;
 import com.idega.util.Timer;
 import com.idega.xml.XMLException;
+
+import net.sf.jasperreports.engine.JRDataSource;
+import net.sf.jasperreports.engine.JRException;
+import net.sf.jasperreports.engine.JasperPrint;
+import net.sf.jasperreports.engine.design.JasperDesign;
 
 public class ReportGeneratorThread extends Thread {
 
@@ -98,7 +98,7 @@ public class ReportGeneratorThread extends Thread {
 			}
 			generateReportAndSend();
 		} catch (Exception e) {
-			e.printStackTrace();
+			LOGGER.log(Level.WARNING, "Error generating report. Datasource: " + dataSource, e);
 		}
 		LOGGER.info("ReportGeneratorThread done");
 	}

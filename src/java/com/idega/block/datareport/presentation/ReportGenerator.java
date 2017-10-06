@@ -756,7 +756,7 @@ public class ReportGenerator extends Block {
 	}
 
 
-	private void generateReport() throws RemoteException, JRException {
+	private void generateReport() throws Exception {
 		if (this.dataSource == null) {
 			getLogger().warning("Data source is unknown, can not generate report");
 			return;
@@ -765,7 +765,15 @@ public class ReportGenerator extends Block {
 		JasperReportBusiness business = getReportBusiness();
 		if (doGenerateSomeJasperReport() && (this.dataSource != null && this.design != null)) {
 			this.reportDescription.put(DynamicReportDesign.PRM_REPORT_NAME, this.reportName);
-			JasperPrint print = business.getReport(this.dataSource, this.reportDescription.getDisplayValueMap(), this.design);
+			JasperPrint print = null;
+			try {
+				print = business.getReport(this.dataSource, this.reportDescription.getDisplayValueMap(), this.design);
+			} catch (Exception e) {
+				getLogger().log(Level.WARNING, "Error generating JasperReport from datasource: " + dataSource + ", design: " + design + ", report name: " + reportName, e);
+			}
+			if (print == null) {
+				throw new RuntimeException("Failed to generate JasperReport (" + JasperPrint.class.getName() + ") from datasource: " + dataSource + ", design: " + design + ", report name: " + reportName);
+			}
 
 			if (this.reportFilePathsMap == null) {
 				this.reportFilePathsMap = new HashMap<String, String>();
@@ -1185,9 +1193,6 @@ public class ReportGenerator extends Block {
 				j++;
 				Link link = new Link(this.reportName, relativeFilePath);
 				link.setTarget(Link.TARGET_NEW_WINDOW);
-				// DownloadLink link = new DownloadLink(_reportName);
-				// link.setRelativeFilePath(relativeFilePath);
-				//
 				reports.add(formatNames[i] + " : ", 1, j);
 				reports.add(link, 2, j);
 			}

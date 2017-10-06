@@ -19,21 +19,6 @@ import java.util.logging.Level;
 import javax.ejb.CreateException;
 import javax.ejb.RemoveException;
 
-import net.sf.jasperreports.engine.JRBand;
-import net.sf.jasperreports.engine.JRDataSource;
-import net.sf.jasperreports.engine.JRException;
-import net.sf.jasperreports.engine.JRExporterParameter;
-import net.sf.jasperreports.engine.JRField;
-import net.sf.jasperreports.engine.JasperExportManager;
-import net.sf.jasperreports.engine.JasperFillManager;
-import net.sf.jasperreports.engine.JasperManager;
-import net.sf.jasperreports.engine.JasperPrint;
-import net.sf.jasperreports.engine.JasperReport;
-import net.sf.jasperreports.engine.design.JasperDesign;
-import net.sf.jasperreports.engine.export.JRHtmlExporter;
-import net.sf.jasperreports.engine.export.JRXlsExporter;
-import net.sf.jasperreports.engine.export.JRXlsExporterParameter;
-
 import com.idega.block.dataquery.data.QueryResult;
 import com.idega.block.dataquery.data.QueryResultField;
 import com.idega.block.dataquery.data.sql.DirectSQLStatement;
@@ -66,6 +51,21 @@ import com.idega.user.data.User;
 import com.idega.util.FileUtil;
 import com.idega.util.IOUtil;
 import com.idega.util.StringHandler;
+
+import net.sf.jasperreports.engine.JRBand;
+import net.sf.jasperreports.engine.JRDataSource;
+import net.sf.jasperreports.engine.JRException;
+import net.sf.jasperreports.engine.JRExporterParameter;
+import net.sf.jasperreports.engine.JRField;
+import net.sf.jasperreports.engine.JasperExportManager;
+import net.sf.jasperreports.engine.JasperFillManager;
+import net.sf.jasperreports.engine.JasperManager;
+import net.sf.jasperreports.engine.JasperPrint;
+import net.sf.jasperreports.engine.JasperReport;
+import net.sf.jasperreports.engine.design.JasperDesign;
+import net.sf.jasperreports.engine.export.JRHtmlExporter;
+import net.sf.jasperreports.engine.export.JRXlsExporter;
+import net.sf.jasperreports.engine.export.JRXlsExporterParameter;
 
 /**
  * <p>Title: idegaWeb</p>
@@ -199,13 +199,13 @@ public String getExcelReport(JasperPrint print, String nameOfReport) {
       exporter.setParameter(JRXlsExporterParameter.IS_REMOVE_EMPTY_SPACE_BETWEEN_ROWS, Boolean.TRUE);
       exporter.setParameter(JRXlsExporterParameter.IS_WHITE_PAGE_BACKGROUND, Boolean.FALSE);
       exporter.exportReport();
-    }
-    catch (JRException ex)  {
+    } catch (Exception ex)  {
       getLogger().log(Level.WARNING, "Jasper print could not be generated at " + path + ". Print: " + print + ", name: " + nameOfReport, ex);
       return null;
     }
+
     getLogger().info("Finished exporting report into Excel: " + path);
-    return getURIToReport(nameOfReport, EXCEL_FILE_EXTENSION,folderIdentifier);
+    return getURIToReport(nameOfReport, EXCEL_FILE_EXTENSION, folderIdentifier);
   }
 
   @Override
