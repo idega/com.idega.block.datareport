@@ -83,6 +83,10 @@
       <artifactId>com.idega.block.dataquery</artifactId>
     </dependency>
     <dependency>
+      <groupId>com.idega.block.platform</groupId>
+      <artifactId>com.idega.block.web2.0</artifactId>
+    </dependency>
+    <dependency>
       <groupId>jasperreports</groupId>
       <artifactId>jasperreports</artifactId>
       <version>${jasperreports-jasperreports-version}</version>

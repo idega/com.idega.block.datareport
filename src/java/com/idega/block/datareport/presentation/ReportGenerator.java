@@ -30,6 +30,8 @@ import java.util.logging.Level;
 
 import javax.ejb.FinderException;
 
+import org.springframework.beans.factory.annotation.Autowired;
+
 import com.idega.block.dataquery.business.QueryService;
 import com.idega.block.dataquery.data.Query;
 import com.idega.block.dataquery.data.QueryHome;
@@ -49,6 +51,7 @@ import com.idega.block.datareport.xml.methodinvocation.MethodDescription;
 import com.idega.block.datareport.xml.methodinvocation.MethodInput;
 import com.idega.block.datareport.xml.methodinvocation.MethodInvocationDocument;
 import com.idega.block.datareport.xml.methodinvocation.MethodInvocationParser;
+import com.idega.block.web2.business.JQuery;
 import com.idega.business.HiddenInputHandler;
 import com.idega.business.IBOLookup;
 import com.idega.business.IBOService;
@@ -71,17 +74,20 @@ import com.idega.presentation.text.Text;
 import com.idega.presentation.ui.BackButton;
 import com.idega.presentation.ui.CheckBoxInputHandler;
 import com.idega.presentation.ui.Form;
+import com.idega.presentation.ui.GenericButton;
 import com.idega.presentation.ui.HiddenInput;
 import com.idega.presentation.ui.InterfaceObject;
-import com.idega.presentation.ui.SubmitButton;
 import com.idega.presentation.ui.TextInput;
 import com.idega.servlet.filter.IWBundleResourceFilter;
 import com.idega.user.business.GroupBusiness;
 import com.idega.user.dao.GroupDAO;
 import com.idega.user.data.Group;
 import com.idega.user.data.User;
+import com.idega.util.CoreConstants;
+import com.idega.util.CoreUtil;
 import com.idega.util.IWTimestamp;
 import com.idega.util.ListUtil;
+import com.idega.util.PresentationUtil;
 import com.idega.util.StringUtil;
 import com.idega.util.datastructures.map.MapUtil;
 import com.idega.util.expression.ELUtil;
@@ -167,9 +173,9 @@ public class ReportGenerator extends Block {
 
 	private List<Group> fullGroups = null;
 
-	/**
-	 *
-	 */
+	@Autowired
+	private JQuery jQuery;
+
 	public ReportGenerator() {
 		super();
 	}
@@ -927,6 +933,11 @@ public class ReportGenerator extends Block {
 
 	@Override
 	public void main(IWContext iwc) throws Exception {
+		ELUtil.getInstance().autowire(this);
+		PresentationUtil.addJavaScriptSourceLineToHeader(iwc, jQuery.getBundleURIToJQueryLib());
+		IWBundle bundle = iwc.getIWMainApplication().getBundle(IW_BUNDLE_IDENTIFIER);
+		PresentationUtil.addJavaScriptSourceLineToHeader(iwc, bundle.getVirtualPathWithFileNameString("javascript/DataReportGenerator.js"));
+
 		ReportGeneratorThread thread = new ReportGeneratorThread();
 
 		IWResourceBundle iwrb = getResourceBundle(iwc);
@@ -939,8 +950,8 @@ public class ReportGenerator extends Block {
 				String genState = iwc.getParameter(PRM_STATE);
 				if (genState == null || "".equals(genState)) {
 					parseQuery(iwc);
-					lineUpElements(iwrb, iwc);
 					Form submForm = new Form();
+					lineUpElements(iwrb, iwc, submForm);
 					submForm.maintainParameters(this.maintainParameterList);
 					submForm.add(this.fieldTable);
 					this.add(submForm);
@@ -975,8 +986,8 @@ public class ReportGenerator extends Block {
 				generateReport = generateReport ? generateReport : !StringUtil.isEmpty(genState);
 				if (!generateReport) {
 					parseMethodInvocationXML(iwc, iwrb);
-					lineUpElements(iwrb, iwc);
 					Form submForm = new Form();
+					lineUpElements(iwrb, iwc, submForm);
 					submForm.maintainParameters(this.maintainParameterList);
 					submForm.add(this.fieldTable);
 					this.add(submForm);
@@ -1019,33 +1030,23 @@ public class ReportGenerator extends Block {
 						result = iwrb.getLocalizedString("report_generator.running_as_thread","This report is now running in the background. The result will be sent to you on the supplied email when it's done. Please don't re-run the report.");
 						this.add(result);
 					} else {
-						getLogger().info("2 Parsing method invocation XML: start");
 						parseMethodInvocationXML(iwc, iwrb);
-						getLogger().info("2 Parsing method invocation XML: done");
 
-						getLogger().info("2 Generating data source: start");
-						ThreadRunDataSourceCollector dataSoruce = generateDataSource(iwc);
-						getLogger().info("2 Generated data source: " + dataSoruce);
+						ThreadRunDataSourceCollector dataSource = generateDataSource(iwc);
 
 						if (doGenerateSomeJasperReport()) {
-							getLogger().info("2 Getting layout: start");
 							getLayoutFromICFileOrGenerate(iwc);
-							getLogger().info("2 Getting layout: done");
 						} else {
-							getLogger().info("2 Preparing layout: start");
 							prepareForLayoutGeneration(iwc, true);
-							getLogger().info("2 Preparing layout: done");
 						}
 						try {
-							getLogger().info("2 Generating report: start");
 							generateReport();
-							getLogger().info("2 Generating report: done");
 
 							this.add(getReportLink(iwc));
 						} catch (Exception e) {
 							this.add(iwrb.getLocalizedString("report_generator.error_generating_report", "Error generating report"));
 
-							getLogger().log(Level.WARNING, "Error generating report", e);
+							getLogger().log(Level.WARNING, "Error generating report. Data source: " + dataSource, e);
 						}
 					}
 
@@ -1187,11 +1188,20 @@ public class ReportGenerator extends Block {
 		};
 
 		int j = 1;
+		String serverName = iwc.getParameter("reportGeneratedOn");
+		if (!CoreUtil.isValidServerName(serverName)) {
+			serverName = CoreUtil.getServerURL(iwc.getRequest());
+		}
+		serverName = CoreUtil.isValidServerName(serverName) ? serverName : null;
+		if (!StringUtil.isEmpty(serverName) && serverName.endsWith(CoreConstants.SLASH)) {
+			serverName = serverName.substring(0, serverName.length() - 1);
+		}
 		for (int i = 0; i < formats.length; i++) {
 			String relativeFilePath = this.reportFilePathsMap.get(formats[i]);
 			if (relativeFilePath != null) {
 				j++;
-				Link link = new Link(this.reportName, relativeFilePath);
+				String url = StringUtil.isEmpty(serverName) ? relativeFilePath : serverName.concat(relativeFilePath);
+				Link link = new Link(this.reportName, url);
 				link.setTarget(Link.TARGET_NEW_WINDOW);
 				reports.add(formatNames[i] + " : ", 1, j);
 				reports.add(link, 2, j);
@@ -1204,7 +1214,7 @@ public class ReportGenerator extends Block {
 	/**
 	 *
 	 */
-	private void lineUpElements(IWResourceBundle iwrb, IWContext iwc) {
+	private void lineUpElements(IWResourceBundle iwrb, IWContext iwc, Form form) {
 		// IWMainApplication iwma = iwc.getApplicationContext().getIWMainApplication();
 		// IWBundle coreBundle = iwma.getBundle(IW_CORE_BUNDLE_IDENTIFIER);
 
@@ -1278,7 +1288,7 @@ public class ReportGenerator extends Block {
 
 		}
 
-		InterfaceObject generateButton = (InterfaceObject) getSubmitButton(iwrb.getLocalizedString("generate_report", " Generate "));
+		InterfaceObject generateButton = (InterfaceObject) getSubmitButton(form, iwrb.getLocalizedString("generate_report", " Generate "));
 		this.fieldTable.add(generateButton, 1, ++row);
 		this.fieldTable.add(new HiddenInput(PRM_STATE, VALUE_STATE_GENERATE_REPORT), 1, row);
 		if (this.fieldTable.getRows() > 1) {
@@ -1291,8 +1301,9 @@ public class ReportGenerator extends Block {
 
 	}
 
-	private PresentationObject getSubmitButton(String text) {
-		SubmitButton button = new SubmitButton(text, PRM_STATE, VALUE_STATE_GENERATE_REPORT);
+	private PresentationObject getSubmitButton(Form form, String text) {
+		GenericButton button = new GenericButton(text);
+		button.setOnClick("DataReportGenerator.submit('" + form.getId() + "', '" + PRM_STATE + "', '" + VALUE_STATE_GENERATE_REPORT + "');");
 		setStyle(button);
 		return button;
 	}
