@@ -173,6 +173,8 @@ public class ReportGenerator extends Block {
 
 	private List<Group> fullGroups = null;
 
+	private boolean addResources = true;
+
 	@Autowired
 	private JQuery jQuery;
 
@@ -426,6 +428,8 @@ public class ReportGenerator extends Block {
 
 	private ThreadRunDataSourceCollector generateDataSource(IWContext iwc) throws XMLException, Exception {
 		Locale currentLocale = iwc.getCurrentLocale();
+		Boolean superAdmin = iwc != null && iwc.isLoggedOn() ? Boolean.valueOf(iwc.isSuperAdmin()) : Boolean.FALSE;
+		User currentUser = iwc != null && iwc.isLoggedOn() ? iwc.getCurrentUser() : null;
 		if (this.queryPK != null) {
 			getLogger().info("Creating data source from query: " + queryPK);
 			QueryService service = (IBOLookup.getServiceInstance(iwc, QueryService.class));
@@ -540,13 +544,13 @@ public class ReportGenerator extends Block {
 							threadPrmVal[i] = prmVal[i];
 							threadParamTypes[i] = paramTypes[i];
 						}
-						threadPrmVal[i] = iwc.getCurrentLocale();
+						threadPrmVal[i] = currentLocale;
 						threadParamTypes[i++] = Locale.class;
-						threadPrmVal[i] = Boolean.valueOf(iwc.isSuperAdmin());
+						threadPrmVal[i] = superAdmin;
 						threadParamTypes[i++] = Boolean.class;
-						threadPrmVal[i] = iwc.getCurrentUser();
-						threadParamTypes[i++] = User.class;;
-						threadPrmVal[i] = iwc.getSessionAttribute(SESSION_KEY_TOP_NODES + iwc.getCurrentUser().getPrimaryKey().toString());
+						threadPrmVal[i] = currentUser;
+						threadParamTypes[i++] = User.class;
+						threadPrmVal[i] = iwc.getSessionAttribute(SESSION_KEY_TOP_NODES + (currentUser == null ? "-1" : currentUser.getPrimaryKey().toString()));
 						threadParamTypes[i++] = Collection.class;
 
 						//Hack, fix later
@@ -618,7 +622,6 @@ public class ReportGenerator extends Block {
 								}
 
 								if (checkGroupsForUserPermissions) {
-									User currentUser = iwc.getCurrentUser();
 									List<Group> viewGroups = new ArrayList<Group>();
 									for (Group g: groups) {
 										if (hasViewPermission(iwc, currentUser, g))	{//	TODO: improve
@@ -687,7 +690,7 @@ public class ReportGenerator extends Block {
 					else {
 						this.reportDescription = tmpReportDescriptionForCollectingData;
 					}
-					this.reportDescription.setLocale(iwc.getCurrentLocale());
+					this.reportDescription.setLocale(currentLocale);
 				}
 			}
 		}
@@ -934,9 +937,13 @@ public class ReportGenerator extends Block {
 	@Override
 	public void main(IWContext iwc) throws Exception {
 		ELUtil.getInstance().autowire(this);
-		PresentationUtil.addJavaScriptSourceLineToHeader(iwc, jQuery.getBundleURIToJQueryLib());
 		IWBundle bundle = iwc.getIWMainApplication().getBundle(IW_BUNDLE_IDENTIFIER);
-		PresentationUtil.addJavaScriptSourceLineToHeader(iwc, bundle.getVirtualPathWithFileNameString("javascript/DataReportGenerator.js"));
+		if (isAddResources()) {
+			try {
+				PresentationUtil.addJavaScriptSourceLineToHeader(iwc, jQuery.getBundleURIToJQueryLib());
+				PresentationUtil.addJavaScriptSourceLineToHeader(iwc, bundle.getVirtualPathWithFileNameString("javascript/DataReportGenerator.js"));
+			} catch (Exception e) {}
+		}
 
 		ReportGeneratorThread thread = new ReportGeneratorThread();
 
@@ -1555,6 +1562,12 @@ public class ReportGenerator extends Block {
 		this.fullGroups = fullGroups;
 	}
 
+	public boolean isAddResources() {
+		return addResources;
+	}
 
+	public void setAddResources(boolean addResources) {
+		this.addResources = addResources;
+	}
 
 }
