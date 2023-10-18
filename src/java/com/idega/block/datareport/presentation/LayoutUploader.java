@@ -9,7 +9,9 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
+
 import javax.ejb.FinderException;
+
 import com.idega.block.dataquery.presentation.ReportQueryBuilder;
 import com.idega.block.media.business.MediaBusiness;
 import com.idega.block.media.presentation.SimpleFileChooser;
@@ -45,28 +47,30 @@ import com.idega.util.StringHandler;
  */
 public class LayoutUploader extends Block {
 
-	public final static String KEY_LAYOUT_UPLOAD_IS_SUBMITTED = "key_layout_upload_is_submitted"; 
+	public final static String KEY_LAYOUT_UPLOAD_IS_SUBMITTED = "key_layout_upload_is_submitted";
 	public final static String KEY_LAYOUT_DOWNLOAD_IS_SUBMITTED = "key_layout_download_is_submitted";
 	private final static String KEY_CHOSEN_LAYOUT_FOR_DOWNLOADING = "key_chosen_layout_for_downloading";
 
-	
+
 	private final static String KEY_FILE_ID = "key_file_id";
 	private final static String KEY_NAME = "key_query_name";
 	private final static String KEY_CHOSEN_LAYOUT = "key_chosen_layout";
 	public final static String KEY_DELETE_LAYOUT_IS_SUBMITTED = "key_delete_layout";
 	private final static String COUNTER_TOKEN = "_";
 	private static final String DEFAULT_NAME = "my layout";
-		
+
 	public static final String IW_BUNDLE_IDENTIFIER = "com.idega.block.dataquery";
-	
+
 	private ICFile layoutFolder = null;
 	private String layoutFolderId = null;
 	private String downloadUrl = null;
-	
+
+	@Override
 	public String getBundleIdentifier(){
     return IW_BUNDLE_IDENTIFIER;
   }
-	
+
+	@Override
 	public void main(IWContext iwc) throws Exception {
 		String error = parseAction(iwc);
 		if (error != null) {
@@ -75,7 +79,7 @@ public class LayoutUploader extends Block {
 			add(errorText);
 		}
 		IWResourceBundle resourceBundle = getResourceBundle(iwc);
-		
+
 		// delete form
 		Text deleteText = new Text(resourceBundle.getLocalizedString("layout_uploader_delete_layout_headline", "Delete Layout"));
 		deleteText.setBold();
@@ -89,7 +93,7 @@ public class LayoutUploader extends Block {
 		table.add(getDeleteButton(resourceBundle), 2, row);
 		form.add(table);
 		add(form);
-		
+
 		// upload form
 		add(Text.getBreak());
 		Text uploadText = new Text(resourceBundle.getLocalizedString("layout_uploader_upload_layout_headline", "Upload Layout"));
@@ -114,7 +118,7 @@ public class LayoutUploader extends Block {
 		uploadForm.add(uploadTable);
 		uploadForm.addParameter(KEY_LAYOUT_UPLOAD_IS_SUBMITTED, KEY_LAYOUT_UPLOAD_IS_SUBMITTED);
 		add(uploadForm);
-		
+
 		// downloading
 		add(Text.getBreak());
 		Text downloadingText = new Text(resourceBundle.getLocalizedString("layout_uploader_download_layout_headline", "Download Layout"));
@@ -135,11 +139,11 @@ public class LayoutUploader extends Block {
 		downloadForm.add(downloadTable);
 		add(downloadForm);
 	}
-	
+
 	private void addMaintainParametersToForm(Form form) {
 		form.addParameter(ReportQueryBuilder.PARAM_LAYOUT_FOLDER_ID, this.layoutFolderId);
 	}
-	
+
 	private String parseAction(IWContext iwc) throws NumberFormatException, FinderException, RemoteException, IOException {
 		int folderId;
 		if (iwc.isParameterSet(ReportQueryBuilder.PARAM_LAYOUT_FOLDER_ID)) {
@@ -170,15 +174,15 @@ public class LayoutUploader extends Block {
 		}
 		else if (iwc.isParameterSet(KEY_LAYOUT_DOWNLOAD_IS_SUBMITTED)) {
 			Object layoutToBeDownloadedId = iwc.getParameter(KEY_CHOSEN_LAYOUT_FOR_DOWNLOADING);
-			Integer layoutToBeDownloaded = new Integer((String) layoutToBeDownloadedId); 
+			Integer layoutToBeDownloaded = new Integer((String) layoutToBeDownloadedId);
 			ICFileHome fileHome = (ICFileHome)IDOLookup.getHome(ICFile.class);
 			ICFile layout = fileHome.findByPrimaryKey(layoutToBeDownloaded);
-			FileBusiness fileBusiness = (FileBusiness) IBOLookup.getServiceInstance(iwc, FileBusiness.class);
+			FileBusiness fileBusiness = IBOLookup.getServiceInstance(iwc, FileBusiness.class);
 			this.downloadUrl = fileBusiness.getURLForOfferingDownload(layout, iwc);
 		}
 		return null;
 	}
-	
+
 	private PresentationObject getDropDownOfLayouts(String key, ICFile designFolder, IWContext iwc) {
 		SortedMap sortedMap = new TreeMap(new StringAlphabeticalComparator(iwc.getCurrentLocale()));
 		DropdownMenu drp = new DropdownMenu(key);
@@ -189,7 +193,7 @@ public class LayoutUploader extends Block {
 				String name = node.getNodeName();
 				String idAsString = node.getId();
 				if (sortedMap.containsKey(name)) {
-					// usually all items have different names therefore 
+					// usually all items have different names therefore
 					// we implement a very simple solution
 					name += " (1)";
 				}
@@ -205,16 +209,16 @@ public class LayoutUploader extends Block {
 		}
 		return drp;
 	}
-			
+
 	private PresentationObject getDeleteButton(IWResourceBundle resourceBundle) {
 		String deleteInfo = resourceBundle.getLocalizedString("layout_uploader_delete", "Delete layout");
 		SubmitButton deleteButton = new SubmitButton(deleteInfo, KEY_DELETE_LAYOUT_IS_SUBMITTED, "true");
 		deleteButton.setAsImageButton(true);
 		return deleteButton;
 	}
-		
-		
-		
+
+
+
 	private PresentationObject getGoBackButton(IWResourceBundle resourceBundle)	{
   	String goBackText = resourceBundle.getLocalizedString("ro_back_to_list", "Back to list");
   	Link goBack = new Link(goBackText);
@@ -222,12 +226,12 @@ public class LayoutUploader extends Block {
   	goBack.setAsImageButton(true);
   	return goBack;
 	}
-	
+
 	private PresentationObject getDownloadButton(IWResourceBundle resourceBundle) {
 	  	SubmitButton downloadButton = new SubmitButton(resourceBundle.getLocalizedString("ro_download","Download..."), KEY_LAYOUT_DOWNLOAD_IS_SUBMITTED, "true");
 	  	downloadButton.setAsImageButton(true);
 	  	return downloadButton;
-		}	
+		}
 
 
 	private String checkName(ICFile designFolder, String name) {
@@ -237,7 +241,7 @@ public class LayoutUploader extends Block {
 		Collection existingNames = null;
 		if(designFolder!=null){
 			existingNames = new ArrayList();
-			Iterator iterator = designFolder.getChildrenIterator();	
+			Iterator iterator = designFolder.getChildrenIterator();
 			if (iterator != null) {
 				while (iterator.hasNext())	{
 					ICTreeNode node = (ICTreeNode) iterator.next();
@@ -248,17 +252,4 @@ public class LayoutUploader extends Block {
 		return StringHandler.addOrIncreaseCounterIfNecessary(name, COUNTER_TOKEN, existingNames);
 	}
 
-  private ICFile getFile(int fileId) throws FinderException {
-    try {
-      ICFileHome home = (ICFileHome) IDOLookup.getHome(ICFile.class);
-      ICFile file = home.findByPrimaryKey(new Integer(fileId));
-      return file;
-    }
-    catch(RemoteException ex){
-      throw new RuntimeException("[ReportBusiness]: Message was: " + ex.getMessage());
-    }
-  }     
-	
-	
-	
 }
